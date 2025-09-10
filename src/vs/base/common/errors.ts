@@ -22,14 +22,6 @@ export class ErrorHandler {
 
 		this.unexpectedErrorHandler = function (e: any) {
 			setTimeout(() => {
-				if (e.stack) {
-					if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
-						throw new ErrorNoTelemetry(e.message + '\n\n' + e.stack);
-					}
-
-					throw new Error(e.message + '\n\n' + e.stack);
-				}
-
 				throw e;
 			}, 0);
 		};

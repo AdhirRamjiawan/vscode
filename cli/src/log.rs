@@ -4,10 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 use chrono::Local;
-use opentelemetry::{
-	sdk::trace::{Tracer, TracerProvider},
-	trace::{SpanBuilder, Tracer as TraitTracer, TracerProvider as TracerProviderTrait},
-};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::{
@@ -425,10 +421,7 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! span {
 	($logger:expr, $span:expr, $func:expr) => {{
-		use opentelemetry::trace::TraceContextExt;
-
 		let span = $span.start($logger.tracer());
-		let cx = opentelemetry::Context::current_with_span(span);
 		let guard = cx.clone().attach();
 		let t = $func;
 
@@ -445,10 +438,7 @@ macro_rules! span {
 #[macro_export]
 macro_rules! spanf {
 	($logger:expr, $span:expr, $func:expr) => {{
-		use opentelemetry::trace::{FutureExt, TraceContextExt};
-
 		let span = $span.start($logger.tracer());
-		let cx = opentelemetry::Context::current_with_span(span);
 		let t = $func.with_context(cx.clone()).await;
 
 		if let Err(e) = &t {

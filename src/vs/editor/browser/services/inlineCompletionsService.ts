@@ -14,7 +14,6 @@ import { InstantiationType, registerSingleton } from '../../../platform/instanti
 import { createDecorator, ServicesAccessor } from '../../../platform/instantiation/common/instantiation.js';
 import { IQuickInputService, IQuickPickItem } from '../../../platform/quickinput/common/quickInput.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../platform/storage/common/storage.js';
-import { ITelemetryService } from '../../../platform/telemetry/common/telemetry.js';
 
 export const IInlineCompletionsService = createDecorator<IInlineCompletionsService>('IInlineCompletionsService');
 
@@ -76,8 +75,7 @@ export class InlineCompletionsService extends Disposable implements IInlineCompl
 	private _timer: WindowIntervalTimer;
 
 	constructor(
-		@IContextKeyService private _contextKeyService: IContextKeyService,
-		@ITelemetryService private _telemetryService: ITelemetryService,
+		@IContextKeyService private _contextKeyService: IContextKeyService
 	) {
 		super();
 
@@ -164,12 +162,6 @@ export class InlineCompletionsService extends Disposable implements IInlineCompl
 			lastCompletionId: string | undefined;
 			recentCompletionIds: string[];
 		};
-		this._telemetryService.publicLog2<WorkspaceStatsEvent, WorkspaceStatsClassification>('inlineCompletions.snooze', {
-			deltaSeconds,
-			totalSeconds,
-			lastCompletionId: this._lastCompletionId,
-			recentCompletionIds: this._recentCompletionIds,
-		});
 	}
 }
 

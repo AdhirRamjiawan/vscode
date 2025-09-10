@@ -14,7 +14,6 @@ import { IDocumentDiff, IDocumentDiffProvider, IDocumentDiffProviderOptions } fr
 import { DetailedLineRangeMapping, RangeMapping } from '../../../common/diff/rangeMapping.js';
 import { ITextModel } from '../../../common/model.js';
 import { DiffAlgorithmName, IEditorWorkerService } from '../../../common/services/editorWorker.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 
 export const IDiffProviderFactoryService = createDecorator<IDiffProviderFactoryService>('diffProviderFactoryService');
 
@@ -52,8 +51,7 @@ export class WorkerBasedDocumentDiffProvider implements IDocumentDiffProvider, I
 
 	constructor(
 		options: IWorkerBasedDocumentDiffProviderOptions,
-		@IEditorWorkerService private readonly editorWorkerService: IEditorWorkerService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IEditorWorkerService private readonly editorWorkerService: IEditorWorkerService
 	) {
 		this.setOptions(options);
 	}
@@ -116,25 +114,6 @@ export class WorkerBasedDocumentDiffProvider implements IDocumentDiffProvider, I
 
 		const sw = StopWatch.create();
 		const result = await this.editorWorkerService.computeDiff(original.uri, modified.uri, options, this.diffAlgorithm);
-		const timeMs = sw.elapsed();
-
-		this.telemetryService.publicLog2<{
-			timeMs: number;
-			timedOut: boolean;
-			detectedMoves: number;
-		}, {
-			owner: 'hediet';
-
-			timeMs: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'To understand if the new diff algorithm is slower/faster than the old one' };
-			timedOut: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'To understand how often the new diff algorithm times out' };
-			detectedMoves: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'To understand how often the new diff algorithm detects moves' };
-
-			comment: 'This event gives insight about the performance of the new diff algorithm.';
-		}>('diffEditor.computeDiff', {
-			timeMs,
-			timedOut: result?.quitEarly ?? true,
-			detectedMoves: options.computeMoves ? (result?.moves.length ?? 0) : -1,
-		});
 
 		if (cancellationToken.isCancellationRequested) {
 			// Text models might be disposed!

@@ -7,11 +7,6 @@ import { Emitter, Event } from './event.js';
 import { Disposable, IDisposable } from './lifecycle.js';
 import * as nls from '../../nls.js';
 
-export interface ITelemetryData {
-	readonly from?: string;
-	readonly target?: string;
-	[key: string]: unknown;
-}
 
 export type WorkbenchActionExecutedClassification = {
 	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run.' };
@@ -153,7 +148,7 @@ export class Action extends Disposable implements IAction {
 		}
 	}
 
-	async run(event?: unknown, data?: ITelemetryData): Promise<void> {
+	async run(event?: unknown): Promise<void> {
 		if (this._actionCallback) {
 			await this._actionCallback(event);
 		}

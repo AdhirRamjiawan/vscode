@@ -554,7 +554,7 @@ abstract class FoldingAction<T> extends EditorAction {
 		}
 		const foldingModelPromise = foldingController.getFoldingModel();
 		if (foldingModelPromise) {
-			this.reportTelemetry(accessor, editor);
+
 			return foldingModelPromise.then(foldingModel => {
 				if (foldingModel) {
 					this.invoke(foldingController, foldingModel, editor, args, languageConfigurationService);

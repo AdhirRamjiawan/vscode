@@ -47,17 +47,10 @@ import { IProductService } from '../../platform/product/common/productService.js
 import { IRequestService } from '../../platform/request/common/request.js';
 import { RequestService } from '../../platform/request/node/requestService.js';
 import { SaveStrategy, StateReadonlyService } from '../../platform/state/node/stateService.js';
-import { resolveCommonProperties } from '../../platform/telemetry/common/commonProperties.js';
-import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js';
-import { ITelemetryServiceConfig, TelemetryService } from '../../platform/telemetry/common/telemetryService.js';
-import { supportsTelemetry, NullTelemetryService, getPiiPathsFromEnvironment, isInternalTelemetry, ITelemetryAppender } from '../../platform/telemetry/common/telemetryUtils.js';
-import { OneDataSystemAppender } from '../../platform/telemetry/node/1dsAppender.js';
-import { buildTelemetryMessage } from '../../platform/telemetry/node/telemetry.js';
 import { IUriIdentityService } from '../../platform/uriIdentity/common/uriIdentity.js';
 import { UriIdentityService } from '../../platform/uriIdentity/common/uriIdentityService.js';
 import { IUserDataProfile, IUserDataProfilesService } from '../../platform/userDataProfile/common/userDataProfile.js';
 import { UserDataProfilesReadonlyService } from '../../platform/userDataProfile/node/userDataProfile.js';
-import { resolveMachineId, resolveSqmId, resolveDevDeviceId } from '../../platform/telemetry/node/telemetryUtils.js';
 import { ExtensionsProfileScannerService } from '../../platform/extensionManagement/node/extensionsProfileScannerService.js';
 import { LogService } from '../../platform/log/common/logService.js';
 import { LoggerService } from '../../platform/log/node/loggerService.js';
@@ -120,7 +113,7 @@ class CliMain extends Disposable {
 		});
 	}
 
-	private async initServices(): Promise<[IInstantiationService, ITelemetryAppender[]]> {
+	private async initServices(): Promise<[IInstantiationService]> {
 		const services = new ServiceCollection();
 
 		// Product
@@ -238,28 +231,7 @@ class CliMain extends Disposable {
 		services.set(IMcpGalleryService, new SyncDescriptor(McpGalleryService, undefined, true));
 		services.set(IMcpManagementService, new SyncDescriptor(McpManagementService, undefined, true));
 
-		// Telemetry
-		const appenders: ITelemetryAppender[] = [];
-		const isInternal = isInternalTelemetry(productService, configurationService);
-		if (supportsTelemetry(productService, environmentService)) {
-			if (productService.aiConfig && productService.aiConfig.ariaKey) {
-				appenders.push(new OneDataSystemAppender(requestService, isInternal, 'monacoworkbench', null, productService.aiConfig.ariaKey));
-			}
-
-			const config: ITelemetryServiceConfig = {
-				appenders,
-				sendErrorTelemetry: false,
-				commonProperties: resolveCommonProperties(release(), hostname(), process.arch, productService.commit, productService.version, machineId, sqmId, devDeviceId, isInternal, productService.date),
-				piiPaths: getPiiPathsFromEnvironment(environmentService)
-			};
-
-			services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [config], false));
-
-		} else {
-			services.set(ITelemetryService, NullTelemetryService);
-		}
-
-		return [new InstantiationService(services), appenders];
+		return [new InstantiationService(services)];
 	}
 
 	private allowWindowsUNCPath(path: string): string {
@@ -334,10 +306,6 @@ class CliMain extends Disposable {
 			return instantiationService.createInstance(McpManagementCli, new ConsoleLogger(LogLevel.Info, false)).addMcpDefinitions(this.argv['add-mcp']);
 		}
 
-		// Telemetry
-		else if (this.argv['telemetry']) {
-			console.log(await buildTelemetryMessage(environmentService.appRoot, environmentService.extensionsPath));
-		}
 	}
 
 	private asExtensionIdOrVSIX(inputs: string[]): (string | URI)[] {

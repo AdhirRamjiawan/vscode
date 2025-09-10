@@ -19,8 +19,6 @@ use cli::{
 	},
 };
 use legacy_args::try_parse_legacy;
-use opentelemetry::sdk::trace::TracerProvider as SdkTracerProvider;
-use opentelemetry::trace::TracerProvider;
 
 #[tokio::main]
 async fn main() -> Result<(), std::convert::Infallible> {

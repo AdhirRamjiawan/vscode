@@ -28,8 +28,6 @@ use crate::util::sync::{new_barrier, Barrier, BarrierOpener};
 
 use futures::stream::FuturesUnordered;
 use futures::FutureExt;
-use opentelemetry::trace::SpanKind;
-use opentelemetry::KeyValue;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -251,10 +249,8 @@ pub async fn serve(
 				let own_forwarding = forwarding.handle();
 
 				tokio::spawn(async move {
-					use opentelemetry::trace::{FutureExt, TraceContextExt};
 
 					let span = own_log.span("server.socket").with_kind(SpanKind::Consumer).start(own_log.tracer());
-					let cx = opentelemetry::Context::current_with_span(span);
 					let serve_at = Instant::now();
 
 					debug!(own_log, "Serving new connection");
@@ -267,7 +263,7 @@ pub async fn serve(
 						platform,
 						exit_barrier: own_exit,
 						requires_auth: AuthRequired::None,
-					}).with_context(cx.clone()).await;
+					}).await;
 
 					cx.span().add_event(
 						"socket.bandwidth",

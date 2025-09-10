@@ -8,8 +8,6 @@ import { Disposable, toDisposable } from '../../../../../base/common/lifecycle.j
 import { IObservable, observableValue, transaction, IObservableWithChange } from '../../../../../base/common/observable.js';
 import { setTimeout0 } from '../../../../../base/common/platform.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
-import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
-import { TextLength } from '../../../core/text/textLength.js';
 import { IModelContentChangedEvent } from '../../../textModelEvents.js';
 import { IModelContentChange } from '../../mirrorTextModel.js';
 import { TextModel } from '../../textModel.js';
@@ -38,8 +36,7 @@ export class TreeSitterTree extends Disposable {
 		private readonly _parserClass: typeof TreeSitter.Parser,
 		// private readonly _injectionQuery: TreeSitter.Query,
 		public readonly textModel: TextModel,
-		@ILogService private readonly _logService: ILogService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService
+		@ILogService private readonly _logService: ILogService
 	) {
 		super();
 
@@ -317,47 +314,6 @@ export class TreeSitterTree extends Disposable {
 		return undefined;
 	}
 
-	private _parse(): Promise<TreeSitter.Tree | undefined> {
-		let parseType: TelemetryParseType = TelemetryParseType.Full;
-		if (this._tree.get()) {
-			parseType = TelemetryParseType.Incremental;
-		}
-		return this._parseAndYield(parseType);
-	}
-
-	private async _parseAndYield(parseType: TelemetryParseType): Promise<TreeSitter.Tree | undefined> {
-		let time: number = 0;
-		let passes: number = 0;
-		const inProgressVersion = this.textModel.getVersionId();
-		let newTree: TreeSitter.Tree | null | undefined;
-
-		const progressCallback = newTimeOutProgressCallback();
-
-		do {
-			const timer = performance.now();
-
-			newTree = this._parser.parse((index: number, position?: TreeSitter.Point) => this._parseCallback(index), this._tree.get(), { progressCallback, includedRanges: this._ranges });
-
-			time += performance.now() - timer;
-			passes++;
-
-			// So long as this isn't the initial parse, even if the model changes and edits are applied, the tree parsing will continue correctly after the await.
-			await new Promise<void>(resolve => setTimeout0(resolve));
-
-		} while (!this._store.isDisposed && !newTree && inProgressVersion === this.textModel.getVersionId());
-		this._sendParseTimeTelemetry(parseType, time, passes);
-		return (newTree && (inProgressVersion === this.textModel.getVersionId())) ? newTree : undefined;
-	}
-
-	private _parseCallback(index: number): string | undefined {
-		try {
-			return this.textModel.getTextBuffer().getNearestChunk(index);
-		} catch (e) {
-			this._logService.debug('Error getting chunk for tree-sitter parsing', e);
-		}
-		return undefined;
-	}
-
 	private _setRanges(newRanges: TreeSitter.Range[]): TreeSitter.Range[] {
 		const unKnownRanges: TreeSitter.Range[] = [];
 		// If we have existing ranges, find the parts of the new ranges that are not included in the existing ones
@@ -387,21 +343,6 @@ export class TreeSitterTree extends Disposable {
 		return unKnownRanges;
 	}
 
-	private _sendParseTimeTelemetry(parseType: TelemetryParseType, time: number, passes: number): void {
-		this._logService.debug(`Tree parsing (${parseType}) took ${time} ms and ${passes} passes.`);
-		type ParseTimeClassification = {
-			owner: 'alexr00';
-			comment: 'Used to understand how long it takes to parse a tree-sitter tree';
-			languageId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The programming language ID.' };
-			time: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The ms it took to parse' };
-			passes: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The number of passes it took to parse' };
-		};
-		if (parseType === TelemetryParseType.Full) {
-			this._telemetryService.publicLog2<{ languageId: string; time: number; passes: number }, ParseTimeClassification>(`treeSitter.fullParse`, { languageId: this.languageId, time, passes });
-		} else {
-			this._telemetryService.publicLog2<{ languageId: string; time: number; passes: number }, ParseTimeClassification>(`treeSitter.incrementalParse`, { languageId: this.languageId, time, passes });
-		}
-	}
 
 	public createParsedTreeSync(src: string): TreeSitter.Tree | undefined {
 		const parser = new this._parserClass();
@@ -410,11 +351,6 @@ export class TreeSitterTree extends Disposable {
 		parser.delete();
 		return tree ?? undefined;
 	}
-}
-
-const enum TelemetryParseType {
-	Full = 'fullParse',
-	Incremental = 'incrementalParse'
 }
 
 export interface TreeParseUpdateEvent {

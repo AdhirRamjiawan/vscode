@@ -16,7 +16,6 @@ import { ServicesAccessor } from '../../../../platform/instantiation/common/inst
 import { KeybindingWeight } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { CopyOptions, InMemoryClipboardMetadataManager } from '../../../browser/controller/editContext/clipboardUtils.js';
 import { NativeEditContextRegistry } from '../../../browser/controller/editContext/native/nativeEditContextRegistry.js';
 import { ICodeEditor } from '../../../browser/editorBrowser.js';
@@ -261,7 +260,6 @@ if (PasteAction) {
 		logService.trace('registerExecCommandImpl (addImplementation code-editor for : paste)');
 		const codeEditorService = accessor.get(ICodeEditorService);
 		const clipboardService = accessor.get(IClipboardService);
-		const telemetryService = accessor.get(ITelemetryService);
 		const productService = accessor.get(IProductService);
 
 		// Only if editor text focus (i.e. not if editor has widget focus).
@@ -293,14 +291,9 @@ if (PasteAction) {
 						type EditorAsyncPasteEvent = {
 							duration: number;
 						};
-						telemetryService.publicLog2<EditorAsyncPasteEvent, EditorAsyncPasteClassification>(
-							'editorAsyncPaste',
-							{ duration }
-						);
-					}
 
-					return CopyPasteController.get(focusedEditor)?.finishedPaste() ?? Promise.resolve();
-				});
+						return CopyPasteController.get(focusedEditor)?.finishedPaste() ?? Promise.resolve();
+					});
 			} else {
 				logService.trace('registerExecCommandImpl (triggerPaste undefined)');
 			}

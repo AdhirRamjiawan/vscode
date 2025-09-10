@@ -15,7 +15,6 @@ import { CommandsRegistry, ICommandService } from '../../../../platform/commands
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { IProgress, Progress } from '../../../../platform/progress/common/progress.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { ICodeEditor } from '../../../browser/editorBrowser.js';
 import { IBulkEditService } from '../../../browser/services/bulkEditService.js';
 import { Range } from '../../../common/core/range.js';
@@ -271,7 +270,6 @@ export async function applyCodeAction(
 ): Promise<void> {
 	const bulkEditService = accessor.get(IBulkEditService);
 	const commandService = accessor.get(ICommandService);
-	const telemetryService = accessor.get(ITelemetryService);
 	const notificationService = accessor.get(INotificationService);
 	const accessibilitySignalService = accessor.get(IAccessibilitySignalService);
 
@@ -290,12 +288,6 @@ export async function applyCodeAction(
 		comment: 'Event used to gain insights into which code actions are being triggered';
 	};
 
-	telemetryService.publicLog2<ApplyCodeActionEvent, ApplyCodeEventClassification>('codeAction.applyCodeAction', {
-		codeActionTitle: item.action.title,
-		codeActionKind: item.action.kind,
-		codeActionIsPreferred: !!item.action.isPreferred,
-		reason: codeActionReason,
-	});
 	accessibilitySignalService.playSignal(AccessibilitySignal.codeActionTriggered);
 	await item.resolve(token);
 	if (token.isCancellationRequested) {

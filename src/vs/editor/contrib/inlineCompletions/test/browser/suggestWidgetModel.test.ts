@@ -23,8 +23,6 @@ import { IKeybindingService } from '../../../../../platform/keybinding/common/ke
 import { MockKeybindingService } from '../../../../../platform/keybinding/test/common/mockKeybindingService.js';
 import { ILogService, NullLogService } from '../../../../../platform/log/common/log.js';
 import { InMemoryStorageService, IStorageService } from '../../../../../platform/storage/common/storage.js';
-import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
-import { NullTelemetryService } from '../../../../../platform/telemetry/common/telemetryUtils.js';
 import assert from 'assert';
 import { ILabelService } from '../../../../../platform/label/common/label.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
@@ -137,7 +135,6 @@ async function withAsyncTestCodeEditorAndInlineCompletionsModel(
 
 		try {
 			const serviceCollection = new ServiceCollection(
-				[ITelemetryService, NullTelemetryService],
 				[ILogService, new NullLogService()],
 				[IStorageService, disposableStore.add(new InMemoryStorageService())],
 				[IKeybindingService, new MockKeybindingService()],

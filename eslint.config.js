@@ -1409,30 +1409,11 @@ export default tseslint.config(
 	// Additional extension strictness rules
 	{
 		files: [
-			'extensions/markdown-language-features/**/*.ts',
-			'extensions/media-preview/**/*.ts',
-			'extensions/simple-browser/**/*.ts',
-			'extensions/typescript-language-features/**/*.ts',
 		],
 		languageOptions: {
 			parser: tseslint.parser,
 			parserOptions: {
 				project: [
-					// Markdown
-					'extensions/markdown-language-features/tsconfig.json',
-					'extensions/markdown-language-features/notebook/tsconfig.json',
-					'extensions/markdown-language-features/preview-src/tsconfig.json',
-
-					// Media preview
-					'extensions/media-preview/tsconfig.json',
-
-					// Media preview
-					'extensions/simple-browser/tsconfig.json',
-					'extensions/simple-browser/preview-src/tsconfig.json',
-
-					// TypeScript
-					'extensions/typescript-language-features/tsconfig.json',
-					'extensions/typescript-language-features/web/tsconfig.json',
 				],
 			}
 		},

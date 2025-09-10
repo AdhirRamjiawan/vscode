@@ -136,14 +136,6 @@ module.exports.indentationFilter = [
 	'!**/Dockerfile.*',
 	'!**/*.Dockerfile',
 	'!**/*.dockerfile',
-
-	// except for built files
-	'!extensions/markdown-language-features/media/*.js',
-	'!extensions/markdown-language-features/notebook-out/*.js',
-	'!extensions/markdown-math/notebook-out/*.js',
-	'!extensions/ipynb/notebook-out/**',
-	'!extensions/notebook-renderers/renderer-out/*.js',
-	'!extensions/simple-browser/media/*.js',
 ];
 
 module.exports.copyrightFilter = [
@@ -175,15 +167,6 @@ module.exports.copyrightFilter = [
 	'!resources/linux/snap/snapcraft.yaml',
 	'!resources/win32/bin/code.js',
 	'!resources/completions/**',
-	'!extensions/configuration-editing/build/inline-allOf.ts',
-	'!extensions/markdown-language-features/media/highlight.css',
-	'!extensions/markdown-math/notebook-out/**',
-	'!extensions/ipynb/notebook-out/**',
-	'!extensions/simple-browser/media/codicon.css',
-	'!extensions/terminal-suggest/src/completions/upstream/**',
-	'!extensions/typescript-language-features/node-maintainer/**',
-	'!extensions/html-language-features/server/src/modes/typescript/*',
-	'!extensions/*/server/bin/*',
 ];
 
 module.exports.tsFormattingFilter = [

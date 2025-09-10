@@ -274,7 +274,6 @@ if (PasteAction) {
 				}
 			}
 
-			const sw = StopWatch.create(true);
 			logService.trace('registerExecCommandImpl (before triggerPaste)');
 			const triggerPaste = clipboardService.triggerPaste(getActiveWindow().vscodeWindowId);
 			if (triggerPaste) {
@@ -282,18 +281,10 @@ if (PasteAction) {
 				return triggerPaste.then(async () => {
 					logService.trace('registerExecCommandImpl (after triggerPaste)');
 					if (productService.quality !== 'stable') {
-						const duration = sw.elapsed();
-						type EditorAsyncPasteClassification = {
-							duration: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The duration of the paste operation.' };
-							owner: 'aiday-mar';
-							comment: 'Provides insight into the delay introduced by pasting async via keybindings.';
-						};
-						type EditorAsyncPasteEvent = {
-							duration: number;
-						};
 
 						return CopyPasteController.get(focusedEditor)?.finishedPaste() ?? Promise.resolve();
-					});
+					}
+				});
 			} else {
 				logService.trace('registerExecCommandImpl (triggerPaste undefined)');
 			}

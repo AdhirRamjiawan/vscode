@@ -50,7 +50,6 @@ import { IListService, WorkbenchObjectTree } from '../../../../platform/list/bro
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { defaultButtonStyles, getInputBoxStyle, getListStyles, getSelectBoxStyles } from '../../../../platform/theme/browser/defaultStyles.js';
 import { editorBackground, foreground } from '../../../../platform/theme/common/colorRegistry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
@@ -840,7 +839,6 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		@IExtensionService protected readonly _extensionsService: IExtensionService,
 		@IExtensionsWorkbenchService protected readonly _extensionsWorkbenchService: IExtensionsWorkbenchService,
 		@IProductService protected readonly _productService: IProductService,
-		@ITelemetryService protected readonly _telemetryService: ITelemetryService,
 		@IHoverService protected readonly _hoverService: IHoverService,
 	) {
 		super();
@@ -2064,12 +2062,6 @@ class SettingBoolRenderer extends AbstractSettingRenderer implements ITreeRender
 	}
 }
 
-type ManageExtensionClickTelemetryClassification = {
-	extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension the user went to manage.' };
-	owner: 'rzhao271';
-	comment: 'Event used to gain insights into when users interact with an extension management setting';
-};
-
 class SettingsExtensionToggleRenderer extends AbstractSettingRenderer implements ITreeRenderer<SettingsTreeSettingElement, never, ISettingExtensionToggleItemTemplate> {
 	templateId = SETTINGS_EXTENSION_TOGGLE_TEMPLATE_ID;
 
@@ -2114,12 +2106,10 @@ class SettingsExtensionToggleRenderer extends AbstractSettingRenderer implements
 
 		const extensionId = dataElement.setting.displayExtensionId!;
 		template.elementDisposables.add(template.actionButton.onDidClick(async () => {
-			this._telemetryService.publicLog2<{ extensionId: String }, ManageExtensionClickTelemetryClassification>('ManageExtensionClick', { extensionId });
 			this._commandService.executeCommand('extension.open', extensionId);
 		}));
 
 		template.elementDisposables.add(template.dismissButton.onDidClick(async () => {
-			this._telemetryService.publicLog2<{ extensionId: String }, ManageExtensionClickTelemetryClassification>('DismissExtensionClick', { extensionId });
 			this._onDidDismissExtensionSetting.fire(extensionId);
 		}));
 	}

@@ -10,7 +10,6 @@ import { IContextKeyService } from '../../../../platform/contextkey/common/conte
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { AccessibilityService } from '../../../../platform/accessibility/browser/accessibilityService.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IJSONEditingService } from '../../configuration/common/jsonEditing.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
@@ -27,7 +26,6 @@ type AccessibilityMetricsClassification = {
 
 export class NativeAccessibilityService extends AccessibilityService implements IAccessibilityService {
 
-	private didSendTelemetry = false;
 	private shouldAlwaysUnderlineAccessKeys: boolean | undefined = undefined;
 
 	constructor(
@@ -35,7 +33,6 @@ export class NativeAccessibilityService extends AccessibilityService implements 
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@ILayoutService _layoutService: ILayoutService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@INativeHostService private readonly nativeHostService: INativeHostService
 	) {
 		super(contextKeyService, _layoutService, configurationService);
@@ -58,10 +55,6 @@ export class NativeAccessibilityService extends AccessibilityService implements 
 	override setAccessibilitySupport(accessibilitySupport: AccessibilitySupport): void {
 		super.setAccessibilitySupport(accessibilitySupport);
 
-		if (!this.didSendTelemetry && accessibilitySupport === AccessibilitySupport.Enabled) {
-			this._telemetryService.publicLog2<AccessibilityMetrics, AccessibilityMetricsClassification>('accessibility', { enabled: true });
-			this.didSendTelemetry = true;
-		}
 	}
 }
 

@@ -64,7 +64,6 @@ export class WorkspaceStateSynchroniser extends AbstractSynchroniser implements 
 		logService: IUserDataSyncLogService,
 		@IFileService fileService: IFileService,
 		@IEnvironmentService environmentService: IEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IStorageService storageService: IStorageService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,

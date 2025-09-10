@@ -13,7 +13,6 @@ import { IPaneCompositePartService } from '../../../services/panecomposite/brows
 import { ViewContainerLocation } from '../../../common/views.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
 import { ITimerService } from '../../../services/timer/browser/timerService.js';
 import { IWorkbenchContribution } from '../../../common/contributions.js';
@@ -79,7 +78,6 @@ export class BrowserStartupTimings extends StartupTimings implements IWorkbenchC
 		@ITimerService private readonly timerService: ITimerService,
 		@ILogService private readonly logService: ILogService,
 		@IBrowserWorkbenchEnvironmentService private readonly environmentService: IBrowserWorkbenchEnvironmentService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService
 	) {
 		super(editorService, paneCompositeService, lifecycleService, updateService, workspaceTrustService);
@@ -97,7 +95,7 @@ export class BrowserStartupTimings extends StartupTimings implements IWorkbenchC
 		const standardStartupError = await this._isStandardStartup();
 		const perfBaseline = await this.timerService.perfBaseline;
 		const [from, to] = this.environmentService.profDurationMarkers;
-		const content = `${this.timerService.getDuration(from, to)}\t${this.productService.nameShort}\t${(this.productService.commit || '').slice(0, 10) || '0000000000'}\t${this.telemetryService.sessionId}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\t${String(perfBaseline).padStart(4, '0')}ms\n`;
+		const content = `${this.timerService.getDuration(from, to)}\t${this.productService.nameShort}\t${(this.productService.commit || '').slice(0, 10) || '0000000000'}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\t${String(perfBaseline).padStart(4, '0')}ms\n`;
 
 		this.logService.info(`[prof-timers] ${content}`);
 	}
@@ -106,7 +104,6 @@ export class BrowserStartupTimings extends StartupTimings implements IWorkbenchC
 export class BrowserResourcePerformanceMarks {
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService
 	) {
 
 		type Entry = {
@@ -127,11 +124,6 @@ export class BrowserResourcePerformanceMarks {
 				const url = new URL(item.name);
 				const name = posix.basename(url.pathname);
 
-				telemetryService.publicLog2<Entry, EntryClassifify>('startup.resource.perf', {
-					hosthash: `H${hash(url.host).toString(16)}`,
-					name,
-					duration: item.duration
-				});
 			} catch {
 				// ignore
 			}

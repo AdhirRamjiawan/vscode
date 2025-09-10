@@ -45,7 +45,6 @@ export interface WalkThroughInputOptions {
 	readonly name: string;
 	readonly description?: string;
 	readonly resource: URI;
-	readonly telemetryFrom: string;
 	readonly onReady?: (container: HTMLElement, contentDisposables: DisposableStore) => void;
 	readonly layout?: (dimension: Dimension) => void;
 }
@@ -81,21 +80,6 @@ export class WalkThroughInput extends EditorInput {
 
 	override getDescription(): string {
 		return this.options.description || '';
-	}
-
-	getTelemetryFrom(): string {
-		return this.options.telemetryFrom;
-	}
-
-	override getTelemetryDescriptor(): { [key: string]: unknown } {
-		const descriptor = super.getTelemetryDescriptor();
-		descriptor['target'] = this.getTelemetryFrom();
-		/* __GDPR__FRAGMENT__
-			"EditorTelemetryDescriptor" : {
-				"target" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-			}
-		*/
-		return descriptor;
 	}
 
 	get onReady() {

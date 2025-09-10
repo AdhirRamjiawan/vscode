@@ -33,7 +33,6 @@ export abstract class FilterViewPaneContainer extends ViewPaneContainer {
 		onDidChangeFilterValue: Event<string[]>,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,

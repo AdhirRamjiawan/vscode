@@ -33,7 +33,6 @@ import { IRemoteAuthorityResolverService, RemoteAuthorityResolverError, RemoteCo
 import { IRemoteExtensionsScannerService } from '../../../../platform/remote/common/remoteExtensionsScanner.js';
 import { getRemoteName, parseAuthorityWithPort } from '../../../../platform/remote/common/remoteHosts.js';
 import { updateProxyConfigurationsScope } from '../../../../platform/request/common/request.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
@@ -68,7 +67,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotificationService notificationService: INotificationService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
@@ -110,7 +108,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 			instantiationService,
 			notificationService,
 			environmentService,
-			telemetryService,
 			extensionEnablementService,
 			fileService,
 			productService,
@@ -178,7 +175,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 			}
 
 			this._logExtensionHostCrash(extensionHost);
-			this._sendExtensionHostCrashTelemetry(code, signal, activatedExtensions);
 
 			this._localCrashTracker.registerCrash();
 
@@ -224,46 +220,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 
 				this._notificationService.prompt(Severity.Error, nls.localize('extensionService.crash', "Extension host terminated unexpectedly 3 times within the last 5 minutes."), choices);
 			}
-		}
-	}
-
-	private _sendExtensionHostCrashTelemetry(code: number, signal: string | null, activatedExtensions: ExtensionIdentifier[]): void {
-		type ExtensionHostCrashClassification = {
-			owner: 'alexdima';
-			comment: 'The extension host has terminated unexpectedly';
-			code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The exit code of the extension host process.' };
-			signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The signal that caused the extension host process to exit.' };
-			extensionIds: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The list of loaded extensions.' };
-		};
-		type ExtensionHostCrashEvent = {
-			code: number;
-			signal: string | null;
-			extensionIds: string[];
-		};
-		this._telemetryService.publicLog2<ExtensionHostCrashEvent, ExtensionHostCrashClassification>('extensionHostCrash', {
-			code,
-			signal,
-			extensionIds: activatedExtensions.map(e => e.value)
-		});
-
-		for (const extensionId of activatedExtensions) {
-			type ExtensionHostCrashExtensionClassification = {
-				owner: 'alexdima';
-				comment: 'The extension host has terminated unexpectedly';
-				code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The exit code of the extension host process.' };
-				signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The signal that caused the extension host process to exit.' };
-				extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The identifier of the extension.' };
-			};
-			type ExtensionHostCrashExtensionEvent = {
-				code: number;
-				signal: string | null;
-				extensionId: string;
-			};
-			this._telemetryService.publicLog2<ExtensionHostCrashExtensionEvent, ExtensionHostCrashExtensionClassification>('extensionHostCrashExtension', {
-				code,
-				signal,
-				extensionId: extensionId.value
-			});
 		}
 	}
 

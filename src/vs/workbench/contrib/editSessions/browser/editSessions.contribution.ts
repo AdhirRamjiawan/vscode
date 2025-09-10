@@ -22,7 +22,6 @@ import { IProgress, IProgressService, IProgressStep, ProgressLocation } from '..
 import { EditSessionsWorkbenchService } from './editSessionsStorageService.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { UserDataSyncErrorCode, UserDataSyncStoreError } from '../../../../platform/userDataSync/common/userDataSync.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 import { getFileNamesMessage, IDialogService, IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
@@ -133,7 +132,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		@IFileService private readonly fileService: IFileService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IOpenerService private readonly openerService: IOpenerService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ISCMService private readonly scmService: ISCMService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IDialogService private readonly dialogService: IDialogService,
@@ -171,7 +169,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		this.editSessionsStorageClient = new EditSessionsStoreClient(URI.parse(this.productService['editSessions.store'].url), this.productService, this.requestService, this.logService, this.environmentService, this.fileService, this.storageService);
 		this.editSessionsStorageService.storeClient = this.editSessionsStorageClient;
-		this.workspaceStateSynchronizer = new WorkspaceStateSynchroniser(this.userDataProfilesService.defaultProfile, undefined, this.editSessionsStorageClient, this.logService, this.fileService, this.environmentService, this.telemetryService, this.configurationService, this.storageService, this.uriIdentityService, this.workspaceIdentityService, this.editSessionsStorageService);
+		this.workspaceStateSynchronizer = new WorkspaceStateSynchroniser(this.userDataProfilesService.defaultProfile, undefined, this.editSessionsStorageClient, this.logService, this.fileService, this.environmentService, this.configurationService, this.storageService, this.uriIdentityService, this.workspaceIdentityService, this.editSessionsStorageService);
 
 		this.autoResumeEditSession();
 
@@ -349,7 +347,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 				if (!destination && !uri) {
 					destination = await that.pickContinueEditSessionDestination();
 					if (!destination) {
-						that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.pick.outcome', { outcome: 'noSelection' });
 						return;
 					}
 				}
@@ -360,12 +357,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 				// Run the store action to get back a ref
 				let ref: string | undefined;
 				if (shouldStoreEditSession) {
-					type ContinueWithEditSessionEvent = {};
-					type ContinueWithEditSessionClassification = {
-						owner: 'joyceerhl'; comment: 'Reporting when storing an edit session as part of the Continue On flow.';
-					};
-					that.telemetryService.publicLog2<ContinueWithEditSessionEvent, ContinueWithEditSessionClassification>('continueOn.editSessions.store');
-
 					const cancellationTokenSource = new CancellationTokenSource();
 					try {
 						ref = await that.progressService.withProgress({
@@ -375,19 +366,12 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 							title: localize('store your working changes', 'Storing your working changes...')
 						}, async () => {
 							const ref = await that.storeEditSession(false, cancellationTokenSource.token);
-							if (ref !== undefined) {
-								that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeSucceeded', hashedId: hashedEditSessionId(ref) });
-							} else {
-								that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeSkipped' });
-							}
 							return ref;
 						}, () => {
 							cancellationTokenSource.cancel();
 							cancellationTokenSource.dispose();
-							that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeCancelledByUser' });
 						});
 					} catch (ex) {
-						that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeFailed' });
 						throw ex;
 					}
 				}
@@ -472,11 +456,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 					location: ProgressLocation.Notification,
 					title: localize('storing working changes', 'Storing working changes...')
 				}, async () => {
-					type StoreEvent = {};
-					type StoreClassification = {
-						owner: 'joyceerhl'; comment: 'Reporting when the store edit session action is invoked.';
-					};
-					that.telemetryService.publicLog2<StoreEvent, StoreClassification>('editSessions.store');
+
 
 					await that.storeEditSession(true, cancellationTokenSource.token);
 				}, () => {
@@ -509,7 +489,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The outcome of resuming the edit session.' };
 			hashedId?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The hash of the stored edit session id, for correlating success of stores and resumes.' };
 		};
-		this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume');
 
 		performance.mark('code/willResumeEditSessionFromIdentifier');
 
@@ -531,7 +510,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		if (editSession.version > EditSessionSchemaVersion) {
 			this.notificationService.error(localize('client too old', "Please upgrade to a newer version of {0} to resume your working changes from the cloud.", this.productService.nameLong));
-			this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume.outcome', { hashedId: hashedEditSessionId(ref), outcome: 'clientUpdateNeeded' });
+
 			return;
 		}
 
@@ -572,7 +551,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			await this.editSessionsStorageService.delete('editSessions', ref);
 			this.logService.info(`Deleted edit session with ref ${ref}.`);
 
-			this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume.outcome', { hashedId: hashedEditSessionId(ref), outcome: 'resumeSucceeded' });
 		} catch (ex) {
 			this.logService.error('Failed to resume edit session, reason: ', (ex as Error).toString());
 			this.notificationService.error(localize('resume failed', "Failed to resume your working changes from the cloud."));
@@ -780,21 +758,15 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		} catch (ex) {
 			this.logService.error(`Failed to store edit session, reason: `, (ex as Error).toString());
 
-			type UploadFailedEvent = { reason: string };
-			type UploadFailedClassification = {
-				owner: 'joyceerhl'; comment: 'Reporting when Continue On server request fails.';
-				reason?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The reason that the server request failed.' };
-			};
-
 			if (ex instanceof UserDataSyncStoreError) {
 				switch (ex.code) {
 					case UserDataSyncErrorCode.TooLarge:
 						// Uploading a payload can fail due to server size limits
-						this.telemetryService.publicLog2<UploadFailedEvent, UploadFailedClassification>('editSessions.upload.failed', { reason: 'TooLarge' });
+
 						this.notificationService.error(localize('payload too large', 'Your working changes exceed the size limit and cannot be stored.'));
 						break;
 					default:
-						this.telemetryService.publicLog2<UploadFailedEvent, UploadFailedClassification>('editSessions.upload.failed', { reason: 'unknown' });
+
 						this.notificationService.error(localize('payload failed', 'Your working changes cannot be stored.'));
 						break;
 				}
@@ -834,7 +806,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		// If the user has been asked before and said no, don't use edit sessions
 		if (this.configurationService.getValue(useEditSessionsWithContinueOn) === 'off') {
-			this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'disabledEditSessionsViaSetting' });
 			return false;
 		}
 
@@ -862,14 +833,11 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			});
 
 			if (!continueWithCloudChanges) {
-				this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'didNotEnableEditSessionsWhenPrompted' });
 				return continueWithCloudChanges;
 			}
 
 			const initialized = await this.editSessionsStorageService.initialize('write');
-			if (!initialized) {
-				this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'didNotEnableEditSessionsWhenPrompted' });
-			}
+
 			return initialized;
 		}
 
@@ -1036,23 +1004,16 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			// to support extensions which want to be in control
 			// of how the destination is opened
 			if (uri === undefined) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'noDestinationUri' });
 				return 'noDestinationUri';
 			}
 
 			if (URI.isUri(uri)) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'resolvedUri' });
 				return uri;
 			}
 
-			this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'invalidDestination' });
 			return undefined;
 		} catch (ex) {
-			if (ex instanceof CancellationError) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'cancelled' });
-			} else {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'unknownError' });
-			}
+
 			return undefined;
 		}
 	}

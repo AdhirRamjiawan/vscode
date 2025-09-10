@@ -8,7 +8,6 @@ import { language } from '../../../../base/common/platform.js';
 import { ILanguageService } from '../../../../editor/common/languages/language.js';
 import { IWorkbenchContributionsRegistry, IWorkbenchContribution, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { ISurveyData } from '../../../../base/common/product.js';
@@ -28,7 +27,6 @@ class LanguageSurvey extends Disposable {
 		data: ISurveyData,
 		storageService: IStorageService,
 		notificationService: INotificationService,
-		telemetryService: ITelemetryService,
 		languageService: ILanguageService,
 		textFileService: ITextFileService,
 		openerService: IOpenerService,
@@ -99,22 +97,19 @@ class LanguageSurvey extends Disposable {
 			[{
 				label: localize('takeShortSurvey', "Take Short Survey"),
 				run: () => {
-					telemetryService.publicLog(`${data.surveyId}.survey/takeShortSurvey`);
-					openerService.open(URI.parse(`${data.surveyUrl}?o=${encodeURIComponent(platform)}&v=${encodeURIComponent(productService.version)}&m=${encodeURIComponent(telemetryService.machineId)}`));
+					openerService.open(URI.parse(`${data.surveyUrl}?o=${encodeURIComponent(platform)}&v=${encodeURIComponent(productService.version)}&m=${encodeURIComponent('machineId123')}`));
 					storageService.store(IS_CANDIDATE_KEY, false, StorageScope.APPLICATION, StorageTarget.USER);
 					storageService.store(SKIP_VERSION_KEY, productService.version, StorageScope.APPLICATION, StorageTarget.USER);
 				}
 			}, {
 				label: localize('remindLater', "Remind Me Later"),
 				run: () => {
-					telemetryService.publicLog(`${data.surveyId}.survey/remindMeLater`);
 					storageService.store(SESSION_COUNT_KEY, sessionCount - 3, StorageScope.APPLICATION, StorageTarget.USER);
 				}
 			}, {
 				label: localize('neverAgain', "Don't Show Again"),
 				isSecondary: true,
 				run: () => {
-					telemetryService.publicLog(`${data.surveyId}.survey/dontShowAgain`);
 					storageService.store(IS_CANDIDATE_KEY, false, StorageScope.APPLICATION, StorageTarget.USER);
 					storageService.store(SKIP_VERSION_KEY, productService.version, StorageScope.APPLICATION, StorageTarget.USER);
 				}
@@ -129,7 +124,6 @@ class LanguageSurveysContribution implements IWorkbenchContribution {
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@IProductService private readonly productService: IProductService,
@@ -152,7 +146,7 @@ class LanguageSurveysContribution implements IWorkbenchContribution {
 		// Handle surveys
 		this.productService.surveys
 			.filter(surveyData => surveyData.surveyId && surveyData.editCount && surveyData.languageId && surveyData.surveyUrl && surveyData.userProbability)
-			.map(surveyData => new LanguageSurvey(surveyData, this.storageService, this.notificationService, this.telemetryService, this.languageService, this.textFileService, this.openerService, this.productService));
+			.map(surveyData => new LanguageSurvey(surveyData, this.storageService, this.notificationService, this.languageService, this.textFileService, this.openerService, this.productService));
 	}
 }
 

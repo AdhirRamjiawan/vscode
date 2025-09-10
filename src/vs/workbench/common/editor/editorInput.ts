@@ -187,19 +187,6 @@ export abstract class EditorInput extends AbstractEditorInput {
 		return undefined;
 	}
 
-	/**
-	 * Returns a descriptor suitable for telemetry events.
-	 *
-	 * Subclasses should extend if they can contribute.
-	 */
-	getTelemetryDescriptor(): { [key: string]: unknown } {
-		/* __GDPR__FRAGMENT__
-			"EditorTelemetryDescriptor" : {
-				"typeId" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-			}
-		*/
-		return { typeId: this.typeId };
-	}
 
 	/**
 	 * Returns if this input is dirty or not.

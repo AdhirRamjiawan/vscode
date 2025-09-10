@@ -14,7 +14,6 @@ import { isWeb } from '../../../../base/common/platform.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { IModelService } from '../../../../editor/common/services/model.js';
 import { IWebWorkerClient } from '../../../../base/common/worker/webWorker.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IDiagnosticsService } from '../../../../platform/diagnostics/common/diagnostics.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IEditorService } from '../../editor/common/editorService.js';
@@ -60,7 +59,6 @@ export class LanguageDetectionService extends Disposable implements ILanguageDet
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 		@IModelService modelService: IModelService,
 		@IEditorService private readonly _editorService: IEditorService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@ILogService private readonly _logService: ILogService
 	) {
@@ -70,7 +68,6 @@ export class LanguageDetectionService extends Disposable implements ILanguageDet
 		this._languageDetectionWorkerClient = this._register(new LanguageDetectionWorkerClient(
 			modelService,
 			languageService,
-			telemetryService,
 			// TODO See if it's possible to bundle vscode-languagedetection
 			useAsar
 				? FileAccess.asBrowserUri(`${moduleLocationAsar}/dist/lib/index.js`).toString(true)
@@ -186,7 +183,6 @@ export class LanguageDetectionWorkerClient extends Disposable {
 	constructor(
 		private readonly _modelService: IModelService,
 		private readonly _languageService: ILanguageService,
-		private readonly _telemetryService: ITelemetryService,
 		private readonly _indexJsUri: string,
 		private readonly _modelJsonUri: string,
 		private readonly _weightsUri: string,
@@ -207,7 +203,6 @@ export class LanguageDetectionWorkerClient extends Disposable {
 			LanguageDetectionWorkerHost.setChannel(workerClient, {
 				$getIndexJsUri: async () => this.getIndexJsUri(),
 				$getLanguageId: async (languageIdOrExt) => this.getLanguageId(languageIdOrExt),
-				$sendTelemetryEvent: async (languages, confidences, timeSpent) => this.sendTelemetryEvent(languages, confidences, timeSpent),
 				$getRegexpModelUri: async () => this.getRegexpModelUri(),
 				$getModelJsonUri: async () => this.getModelJsonUri(),
 				$getWeightsUri: async () => this.getWeightsUri(),
@@ -256,16 +251,8 @@ export class LanguageDetectionWorkerClient extends Disposable {
 		return this._regexpModelUri;
 	}
 
-	async sendTelemetryEvent(languages: string[], confidences: number[], timeSpent: number): Promise<void> {
-		this._telemetryService.publicLog2<ILanguageDetectionStats, LanguageDetectionStatsClassification>(LanguageDetectionStatsId, {
-			languages: languages.join(','),
-			confidences: confidences.join(','),
-			timeSpent
-		});
-	}
-
 	public async detectLanguage(resource: URI, langBiases: Record<string, number> | undefined, preferHistory: boolean, supportedLangs?: string[]): Promise<string | undefined> {
-		const startTime = Date.now();
+
 		const quickGuess = this._guessLanguageIdByUri(resource);
 		if (quickGuess) {
 			return quickGuess;
@@ -276,24 +263,6 @@ export class LanguageDetectionWorkerClient extends Disposable {
 		const modelId = await workerClient.proxy.$detectLanguage(resource.toString(), langBiases, preferHistory, supportedLangs);
 		const languageId = this.getLanguageId(modelId);
 
-		const LanguageDetectionStatsId = 'automaticlanguagedetection.perf';
-
-		interface ILanguageDetectionPerf {
-			timeSpent: number;
-			detection: string;
-		}
-
-		type LanguageDetectionPerfClassification = {
-			owner: 'TylerLeonhardt';
-			comment: 'Helps understand how effective language detection and how long it takes to run';
-			timeSpent: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The time it took to run language detection' };
-			detection: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The language that was detected' };
-		};
-
-		this._telemetryService.publicLog2<ILanguageDetectionPerf, LanguageDetectionPerfClassification>(LanguageDetectionStatsId, {
-			timeSpent: Date.now() - startTime,
-			detection: languageId || 'unknown',
-		});
 
 		return languageId;
 	}

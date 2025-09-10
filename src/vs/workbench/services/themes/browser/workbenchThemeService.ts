@@ -8,7 +8,6 @@ import * as types from '../../../../base/common/types.js';
 import { IExtensionService } from '../../extensions/common/extensions.js';
 import { IWorkbenchThemeService, IWorkbenchColorTheme, IWorkbenchFileIconTheme, ExtensionData, ThemeSettings, IWorkbenchProductIconTheme, ThemeSettingTarget, ThemeSettingDefaults, COLOR_THEME_DARK_INITIAL_COLORS, COLOR_THEME_LIGHT_INITIAL_COLORS } from '../common/workbenchThemeService.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import * as errors from '../../../../base/common/errors.js';
 import { IConfigurationService, ConfigurationTarget } from '../../../../platform/configuration/common/configuration.js';
@@ -101,7 +100,6 @@ export class WorkbenchThemeService extends Disposable implements IWorkbenchTheme
 		@IExtensionService extensionService: IExtensionService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IBrowserWorkbenchEnvironmentService private readonly environmentService: IBrowserWorkbenchEnvironmentService,
 		@IFileService fileService: IFileService,
 		@IExtensionResourceLoaderService private readonly extensionResourceLoaderService: IExtensionResourceLoaderService,
@@ -500,8 +498,6 @@ export class WorkbenchThemeService extends Disposable implements IWorkbenchTheme
 
 		this.colorThemeWatcher.update(newTheme);
 
-		this.sendTelemetry(newTheme.id, newTheme.extensionData, 'color');
-
 		if (silent) {
 			return Promise.resolve(null);
 		}
@@ -514,40 +510,6 @@ export class WorkbenchThemeService extends Disposable implements IWorkbenchTheme
 		}
 
 		return this.settings.setColorTheme(this.currentColorTheme, settingsTarget);
-	}
-
-
-	private themeExtensionsActivated = new Map<string, boolean>();
-	private sendTelemetry(themeId: string, themeData: ExtensionData | undefined, themeType: string) {
-		if (themeData) {
-			const key = themeType + themeData.extensionId;
-			if (!this.themeExtensionsActivated.get(key)) {
-				type ActivatePluginClassification = {
-					owner: 'aeschli';
-					comment: 'An event is fired when an color theme extension is first used as it provides the currently shown color theme.';
-					id: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'The extension id.' };
-					name: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'The extension name.' };
-					isBuiltin: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the extension is a built-in extension.' };
-					publisherDisplayName: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension publisher id.' };
-					themeId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'The id of the theme that triggered the first extension use.' };
-				};
-				type ActivatePluginEvent = {
-					id: string;
-					name: string;
-					isBuiltin: boolean;
-					publisherDisplayName: string;
-					themeId: string;
-				};
-				this.telemetryService.publicLog2<ActivatePluginEvent, ActivatePluginClassification>('activatePlugin', {
-					id: themeData.extensionId,
-					name: themeData.extensionName,
-					isBuiltin: themeData.extensionIsBuiltin,
-					publisherDisplayName: themeData.extensionPublisher,
-					themeId: themeId
-				});
-				this.themeExtensionsActivated.set(key, true);
-			}
-		}
 	}
 
 	public async getFileIconThemes(): Promise<IWorkbenchFileIconTheme[]> {
@@ -648,10 +610,6 @@ export class WorkbenchThemeService extends Disposable implements IWorkbenchTheme
 
 		this.fileIconThemeWatcher.update(iconThemeData);
 
-		if (iconThemeData.id) {
-			this.sendTelemetry(iconThemeData.id, iconThemeData.extensionData, 'fileIcon');
-		}
-
 		if (!silent) {
 			this.onFileIconThemeChange.fire(this.currentFileIconTheme);
 		}
@@ -749,9 +707,6 @@ export class WorkbenchThemeService extends Disposable implements IWorkbenchTheme
 
 		this.productIconThemeWatcher.update(iconThemeData);
 
-		if (iconThemeData.id) {
-			this.sendTelemetry(iconThemeData.id, iconThemeData.extensionData, 'productIcon');
-		}
 		if (!silent) {
 			this.onProductIconThemeChange.fire(this.currentProductIconTheme);
 		}

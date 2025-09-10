@@ -20,8 +20,6 @@ import { IWorkbenchLayoutService } from '../../../services/layout/browser/layout
 import { GettingStartedEditorOptions, GettingStartedInput, gettingStartedInputTypeId } from './gettingStartedInput.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
-import { getTelemetryLevel } from '../../../../platform/telemetry/common/telemetryUtils.js';
-import { TelemetryLevel } from '../../../../platform/telemetry/common/telemetry.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { localize } from '../../../../nls.js';
@@ -36,7 +34,6 @@ export type RestoreWalkthroughsConfigurationValue = { folder: string; category?:
 
 const configurationKey = 'workbench.startupEditor';
 const oldConfigurationKey = 'workbench.welcome.enabled';
-const telemetryOptOutStorageKey = 'workbench.telemetryOptOutShown';
 
 export class StartupPageEditorResolverContribution extends Disposable implements IWorkbenchContribution {
 
@@ -115,17 +112,6 @@ export class StartupPageRunnerContribution extends Disposable implements IWorkbe
 			return;
 		}
 
-		// Always open Welcome page for first-launch, no matter what is open or which startupEditor is set.
-		if (
-			this.productService.enableTelemetry
-			&& this.productService.showTelemetryOptOut
-			&& getTelemetryLevel(this.configurationService) !== TelemetryLevel.NONE
-			&& !this.environmentService.skipWelcome
-			&& !this.storageService.get(telemetryOptOutStorageKey, StorageScope.PROFILE)
-		) {
-			this.storageService.store(telemetryOptOutStorageKey, true, StorageScope.PROFILE, StorageTarget.USER);
-		}
-
 		if (this.tryOpenWalkthroughForFolder()) {
 			return;
 		}
@@ -197,7 +183,7 @@ export class StartupPageRunnerContribution extends Disposable implements IWorkbe
 		}
 	}
 
-	private async openGettingStarted(showTelemetryNotice?: boolean) {
+	private async openGettingStarted() {
 		const startupEditorTypeID = gettingStartedInputTypeId;
 		const editor = this.editorService.activeEditor;
 
@@ -205,8 +191,7 @@ export class StartupPageRunnerContribution extends Disposable implements IWorkbe
 		if (editor?.typeId === startupEditorTypeID || this.editorService.editors.some(e => e.typeId === startupEditorTypeID)) {
 			return;
 		}
-
-		const options: GettingStartedEditorOptions = editor ? { pinned: false, index: 0, showTelemetryNotice } : { pinned: false, showTelemetryNotice };
+		const options: GettingStartedEditorOptions = editor ? { pinned: false, index: 0, } : { pinned: false, };
 		if (startupEditorTypeID === gettingStartedInputTypeId) {
 			this.editorService.openEditor({
 				resource: GettingStartedInput.RESOURCE,

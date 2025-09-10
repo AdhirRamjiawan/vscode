@@ -42,7 +42,6 @@ import { IProductService } from '../../../../platform/product/common/productServ
 import { IEditorProgressService, IProgressRunner } from '../../../../platform/progress/common/progress.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { defaultButtonStyles, defaultToggleStyles } from '../../../../platform/theme/browser/defaultStyles.js';
 import { asCssVariable, asCssVariableWithDefault, badgeBackground, badgeForeground, contrastBorder, editorForeground, inputBackground } from '../../../../platform/theme/common/colorRegistry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
@@ -126,7 +125,6 @@ export class SettingsEditor2 extends EditorPane {
 		`@tag:${WORKSPACE_TRUST_SETTING_TAG}`,
 		'@tag:sync',
 		'@tag:usesOnlineServices',
-		'@tag:telemetry',
 		'@tag:accessibility',
 		'@tag:preview',
 		'@tag:experimental',
@@ -243,7 +241,6 @@ export class SettingsEditor2 extends EditorPane {
 
 	constructor(
 		group: IEditorGroup,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchConfigurationService private readonly configurationService: IWorkbenchConfigurationService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IThemeService themeService: IThemeService,
@@ -266,7 +263,7 @@ export class SettingsEditor2 extends EditorPane {
 		@IUserDataProfileService userDataProfileService: IUserDataProfileService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService
 	) {
-		super(SettingsEditor2.ID, group, telemetryService, themeService, storageService);
+		super(SettingsEditor2.ID, group, themeService, storageService);
 		this.searchDelayer = new Delayer(200);
 		this.viewState = { settingsTarget: ConfigurationTarget.USER_LOCAL };
 
@@ -1330,8 +1327,6 @@ export class SettingsEditor2 extends EditorPane {
 			isReset: props.isReset,
 			target: reportedTarget
 		};
-
-		this.telemetryService.publicLog2<SettingsEditorModifiedSettingEvent, SettingsEditorModifiedSettingClassification>('settingsEditor.settingModified', data);
 	}
 
 	private scheduleRefresh(element: HTMLElement, key = ''): void {
@@ -1951,23 +1946,6 @@ export class SettingsEditor2 extends EditorPane {
 		return result;
 	}
 
-	private logSearchPerformance(providerName: string, elapsed: number): void {
-		type SettingsEditorSearchPerformanceEvent = {
-			providerName: string | undefined;
-			elapsedMs: number;
-		};
-		type SettingsEditorSearchPerformanceClassification = {
-			providerName: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The name of the search provider, if applicable.' };
-			elapsedMs: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The time taken to perform the search, in milliseconds.' };
-			owner: 'rzhao271';
-			comment: 'Event emitted when the Settings editor calls a search provider to search for a setting';
-		};
-		this.telemetryService.publicLog2<SettingsEditorSearchPerformanceEvent, SettingsEditorSearchPerformanceClassification>('settingsEditor.searchPerformance', {
-			providerName,
-			elapsedMs: elapsed,
-		});
-	}
-
 	private renderResultCountMessages(showAiResultsMessage: boolean) {
 		if (!this.currentSettingsModel) {
 			return;
@@ -2092,8 +2070,7 @@ class SyncControls extends Disposable {
 		container: HTMLElement,
 		@ICommandService private readonly commandService: ICommandService,
 		@IUserDataSyncService private readonly userDataSyncService: IUserDataSyncService,
-		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService
 	) {
 		super();
 

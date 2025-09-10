@@ -13,7 +13,6 @@ import { combinedDisposable, DisposableStore, IDisposable } from '../../../base/
 import { IContextViewService } from './contextView.js';
 import { IKeybindingService } from '../../keybinding/common/keybinding.js';
 import { INotificationService } from '../../notification/common/notification.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { defaultMenuStyles } from '../../theme/browser/defaultStyles.js';
 
 
@@ -30,7 +29,6 @@ export class ContextMenuHandler {
 
 	constructor(
 		private contextViewService: IContextViewService,
-		private telemetryService: ITelemetryService,
 		private notificationService: INotificationService,
 		private keybindingService: IKeybindingService,
 	) { }
@@ -82,7 +80,6 @@ export class ContextMenuHandler {
 				const menuDisposables = new DisposableStore();
 
 				const actionRunner = delegate.actionRunner || menuDisposables.add(new ActionRunner());
-				actionRunner.onWillRun(evt => this.onActionRun(evt, !delegate.skipTelemetry), this, menuDisposables);
 				actionRunner.onDidRun(this.onDidActionRun, this, menuDisposables);
 				menu = new Menu(container, actions, {
 					actionViewItemProvider: delegate.getActionViewItem,
@@ -146,14 +143,6 @@ export class ContextMenuHandler {
 				this.lastContainer = null;
 			}
 		}, shadowRootElement, !!shadowRootElement);
-	}
-
-	private onActionRun(e: IRunEvent, logTelemetry: boolean): void {
-		if (logTelemetry) {
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'contextMenu' });
-		}
-
-		this.contextViewService.hideContextView(false);
 	}
 
 	private onDidActionRun(e: IRunEvent): void {

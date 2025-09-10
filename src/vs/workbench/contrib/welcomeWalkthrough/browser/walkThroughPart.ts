@@ -13,7 +13,6 @@ import { URI } from '../../../../base/common/uri.js';
 import { IDisposable, dispose, toDisposable, DisposableStore } from '../../../../base/common/lifecycle.js';
 import { IEditorMemento, IEditorOpenContext } from '../../../common/editor.js';
 import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { WalkThroughInput } from './walkThroughInput.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { ITextResourceConfigurationService } from '../../../../editor/common/services/textResourceConfiguration.js';
@@ -68,7 +67,6 @@ export class WalkThroughPart extends EditorPane {
 
 	constructor(
 		group: IEditorGroup,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -81,7 +79,7 @@ export class WalkThroughPart extends EditorPane {
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
 	) {
-		super(WalkThroughPart.ID, group, telemetryService, themeService, storageService);
+		super(WalkThroughPart.ID, group, themeService, storageService);
 		this.editorFocus = WALK_THROUGH_FOCUS.bindTo(this.contextKeyService);
 		this.editorMemento = this.getEditorMemento<IWalkThroughEditorViewState>(editorGroupService, textResourceConfigurationService, WALK_THROUGH_EDITOR_VIEW_STATE_PREFERENCE_KEY);
 	}
@@ -198,7 +196,6 @@ export class WalkThroughPart extends EditorPane {
 			return uri;
 		}
 		const query = uri.query ? JSON.parse(uri.query) : {};
-		query.from = this.input.getTelemetryFrom();
 		return uri.with({ query: JSON.stringify(query) });
 	}
 
@@ -315,12 +312,7 @@ export class WalkThroughPart extends EditorPane {
 					const div = innerContent.querySelector(`#${id.replace(/[\\.]/g, '\\$&')}`) as HTMLElement;
 
 					const options = this.getEditorOptions(model.getLanguageId());
-					const telemetryData = {
-						target: this.input instanceof WalkThroughInput ? this.input.getTelemetryFrom() : undefined,
-						snippet: i
-					};
 					const editor = this.instantiationService.createInstance(CodeEditorWidget, div, options, {
-						telemetryData: telemetryData
 					});
 					editor.setModel(model);
 					this.contentDisposables.push(editor);

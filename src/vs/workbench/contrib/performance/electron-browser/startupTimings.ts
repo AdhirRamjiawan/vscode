@@ -9,7 +9,6 @@ import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { INativeWorkbenchEnvironmentService } from '../../../services/environment/electron-browser/environmentService.js';
 import { ILifecycleService } from '../../../services/lifecycle/common/lifecycle.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IUpdateService } from '../../../../platform/update/common/update.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
@@ -48,7 +47,6 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		@INativeHostService private readonly _nativeHostService: INativeHostService,
 		@IEditorService editorService: IEditorService,
 		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IUpdateService updateService: IUpdateService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
@@ -77,21 +75,17 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		try {
 			await Promise.all([
 				this._timerService.whenReady(),
-				timeout(15000), // wait: cached data creation, telemetry sending
+				timeout(15000), // wait: cached data creation
 			]);
 
 			const perfBaseline = await this._timerService.perfBaseline;
 			const heapStatistics = await this._resolveStartupHeapStatistics();
-			if (heapStatistics) {
-				this._telemetryLogHeapStatistics(heapStatistics);
-			}
 
 			if (appendTo) {
 				const content = coalesce([
 					this._timerService.startupMetrics.ellapsed,
 					this._productService.nameShort,
 					(this._productService.commit || '').slice(0, 10) || '0000000000',
-					this._telemetryService.sessionId,
 					standardStartupError === undefined ? 'standard_start' : `NO_standard_start : ${standardStartupError}`,
 					`${String(perfBaseline).padStart(4, '0')}ms`,
 					heapStatistics ? this._printStartupHeapStatistics(heapStatistics) : undefined
@@ -205,32 +199,6 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		}
 
 		return undefined;
-	}
-
-	private _telemetryLogHeapStatistics({ used, garbage, majorGCs, minorGCs, duration }: IHeapStatistics): void {
-		type StartupHeapStatisticsClassification = {
-			owner: 'bpasero';
-			comment: 'An event that reports startup heap statistics for performance analysis.';
-			heapUsed: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Used heap' };
-			heapGarbage: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Garbage heap' };
-			majorGCs: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Major GCs count' };
-			minorGCs: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Minor GCs count' };
-			gcsDuration: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'GCs duration' };
-		};
-		type StartupHeapStatisticsEvent = {
-			heapUsed: number;
-			heapGarbage: number;
-			majorGCs: number;
-			minorGCs: number;
-			gcsDuration: number;
-		};
-		this._telemetryService.publicLog2<StartupHeapStatisticsEvent, StartupHeapStatisticsClassification>('startupHeapStatistics', {
-			heapUsed: used,
-			heapGarbage: garbage,
-			majorGCs,
-			minorGCs,
-			gcsDuration: duration
-		});
 	}
 
 	private _printStartupHeapStatistics({ used, garbage, majorGCs, minorGCs, duration }: IHeapStatistics) {

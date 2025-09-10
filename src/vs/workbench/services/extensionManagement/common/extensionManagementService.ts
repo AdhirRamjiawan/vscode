@@ -42,7 +42,6 @@ import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/w
 import { IExtensionsScannerService, IScannedExtension } from '../../../../platform/extensionManagement/common/extensionsScannerService.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { verifiedPublisherIcon } from './extensionsIcons.js';
@@ -109,8 +108,7 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IExtensionsScannerService private readonly extensionsScannerService: IExtensionsScannerService,
 		@IAllowedExtensionsService allowedExtensionsService: IAllowedExtensionsService,
-		@IStorageService private readonly storageService: IStorageService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IStorageService private readonly storageService: IStorageService
 	) {
 		super(productService, allowedExtensionsService);
 
@@ -648,10 +646,7 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		try {
 			await this.workspaceExtensionManagementService.uninstall(extension);
 			this.logService.info(`Successfully uninstalled the workspace extension ${extension.identifier.id} from ${extension.location.toString()}`);
-			this.telemetryService.publicLog2<{}, {
-				owner: 'sandy081';
-				comment: 'Uninstall workspace extension';
-			}>('workspaceextension:uninstall');
+
 			this._onDidUninstallExtension.fire({
 				identifier: extension.identifier,
 				server,
@@ -854,7 +849,6 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		const installButton: IPromptButton<void> = {
 			label: allPublishers.length > 1 ? localize({ key: 'trust publishers and install', comment: ['&& denotes a mnemonic'] }, "Trust Publishers & &&Install") : localize({ key: 'trust and install', comment: ['&& denotes a mnemonic'] }, "Trust Publisher & &&Install"),
 			run: () => {
-				this.telemetryService.publicLog2<TrustPublisherEvent, TrustPublisherClassification>('extensions:trustPublisher', { action: 'trust', extensionId: untrustedExtensions.map(e => e.identifier.id).join(',') });
 				this.trustPublishers(...allPublishers.map(p => ({ publisher: p.publisher, publisherDisplayName: p.publisherDisplayName })));
 			}
 		};
@@ -862,7 +856,6 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		const learnMoreButton: IPromptButton<void> = {
 			label: localize({ key: 'learnMore', comment: ['&& denotes a mnemonic'] }, "&&Learn More"),
 			run: () => {
-				this.telemetryService.publicLog2<TrustPublisherEvent, TrustPublisherClassification>('extensions:trustPublisher', { action: 'learn', extensionId: untrustedExtensions.map(e => e.identifier.id).join(',') });
 				this.instantiationService.invokeFunction(accessor => accessor.get(ICommandService).executeCommand('vscode.open', URI.parse('https://aka.ms/vscode-extension-security')));
 				throw new CancellationError();
 			}
@@ -935,7 +928,6 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 			buttons: [installButton, learnMoreButton],
 			cancelButton: {
 				run: () => {
-					this.telemetryService.publicLog2<TrustPublisherEvent, TrustPublisherClassification>('extensions:trustPublisher', { action: 'cancel', extensionId: untrustedExtensions.map(e => e.identifier.id).join(',') });
 					throw new CancellationError();
 				}
 			},
@@ -1207,8 +1199,7 @@ class WorkspaceExtensionsManagementService extends Disposable {
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@IExtensionsScannerService private readonly extensionsScannerService: IExtensionsScannerService,
 		@IStorageService private readonly storageService: IStorageService,
-		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService
 	) {
 		super();
 
@@ -1309,11 +1300,6 @@ class WorkspaceExtensionsManagementService extends Disposable {
 		}
 
 		this.saveWorkspaceExtensions();
-		this.telemetryService.publicLog2<{}, {
-			owner: 'sandy081';
-			comment: 'Install workspace extension';
-		}>('workspaceextension:install');
-
 		return workspaceExtension;
 	}
 
@@ -1326,10 +1312,6 @@ class WorkspaceExtensionsManagementService extends Disposable {
 			this.saveWorkspaceExtensions();
 		}
 
-		this.telemetryService.publicLog2<{}, {
-			owner: 'sandy081';
-			comment: 'Uninstall workspace extension';
-		}>('workspaceextension:uninstall');
 	}
 
 	getInstalledWorkspaceExtensionsLocations(): URI[] {

@@ -58,7 +58,6 @@ import { ServiceCollection } from '../../../../platform/instantiation/common/ser
 import { ColorDetector } from '../../../../editor/contrib/colorPicker/browser/colorDetector.js';
 import { LinkDetector } from '../../../../editor/contrib/links/browser/links.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IListAccessibilityProvider } from '../../../../base/browser/ui/list/listWidget.js';
 import { ILabelService } from '../../../../platform/label/common/label.js';
 import { KeyCode } from '../../../../base/common/keyCodes.js';
@@ -443,7 +442,6 @@ class ResourceGroupRenderer implements ICompressibleTreeRenderer<ISCMResourceGro
 		@IKeybindingService private keybindingService: IKeybindingService,
 		@IMenuService private menuService: IMenuService,
 		@ISCMViewService private scmViewService: ISCMViewService,
-		@ITelemetryService private telemetryService: ITelemetryService
 	) { }
 
 	renderTemplate(container: HTMLElement): ResourceGroupTemplate {
@@ -456,7 +454,7 @@ class ResourceGroupRenderer implements ICompressibleTreeRenderer<ISCMResourceGro
 		const actionBar = new WorkbenchToolBar(actionsContainer, {
 			actionViewItemProvider: this.actionViewItemProvider,
 			actionRunner: this.actionRunner
-		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService, this.commandService, this.telemetryService);
+		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService, this.commandService);
 		const countContainer = append(element, $('.count'));
 		const count = new CountBadge(countContainer, {}, defaultCountBadgeStyles);
 		const disposables = combinedDisposable(actionBar, count);
@@ -550,7 +548,6 @@ class ResourceRenderer implements ICompressibleTreeRenderer<ISCMResource | IReso
 		@ILabelService private labelService: ILabelService,
 		@IMenuService private menuService: IMenuService,
 		@ISCMViewService private scmViewService: ISCMViewService,
-		@ITelemetryService private telemetryService: ITelemetryService,
 		@IThemeService private themeService: IThemeService
 	) {
 		themeService.onDidColorThemeChange(this.onDidColorThemeChange, this, this.disposables);
@@ -564,7 +561,7 @@ class ResourceRenderer implements ICompressibleTreeRenderer<ISCMResource | IReso
 		const actionBar = new WorkbenchToolBar(actionsContainer, {
 			actionViewItemProvider: this.actionViewItemProvider,
 			actionRunner: this.actionRunner
-		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService, this.commandService, this.telemetryService);
+		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService, this.commandService);
 
 		const decorationIcon = append(element, $('.decoration-icon'));
 		const actionBarMenuListener = new MutableDisposable<IDisposable>();
@@ -1353,9 +1350,6 @@ registerAction2(class extends Action2 {
 
 	override async run(accessor: ServicesAccessor, ...args: any[]): Promise<void> {
 		const commandService = accessor.get(ICommandService);
-		const telemetryService = accessor.get(ITelemetryService);
-
-		telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: CHAT_SETUP_ACTION_ID, from: 'scmInput' });
 
 		const result = await commandService.executeCommand(CHAT_SETUP_ACTION_ID);
 		if (!result) {
@@ -1447,10 +1441,9 @@ class SCMInputWidgetToolbar extends WorkbenchToolBar {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@ICommandService commandService: ICommandService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@IStorageService private readonly storageService: IStorageService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IStorageService private readonly storageService: IStorageService
 	) {
-		super(container, options, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService);
+		super(container, options, menuService, contextKeyService, contextMenuService, keybindingService, commandService);
 
 		this._dropdownAction = new Action(
 			'scmInputMoreActions',

@@ -33,7 +33,6 @@ import { GOLDEN_LINE_HEIGHT_RATIO, MINIMUM_LINE_HEIGHT } from '../../../../../ed
 import { TerminalCompletionModel } from './terminalCompletionModel.js';
 import { TerminalCompletionItem, TerminalCompletionItemKind, type ITerminalCompletion } from './terminalCompletionItem.js';
 import { localize } from '../../../../../nls.js';
-import { TerminalSuggestTelemetry } from './terminalSuggestTelemetry.js';
 import { terminalSymbolAliasIcon, terminalSymbolArgumentIcon, terminalSymbolEnumMember, terminalSymbolFileIcon, terminalSymbolFlagIcon, terminalSymbolInlineSuggestionIcon, terminalSymbolMethodIcon, terminalSymbolOptionIcon, terminalSymbolFolderIcon, terminalSymbolSymbolicLinkFileIcon, terminalSymbolSymbolicLinkFolderIcon, terminalSymbolCommitIcon, terminalSymbolBranchIcon, terminalSymbolTagIcon, terminalSymbolStashIcon, terminalSymbolRemoteIcon, terminalSymbolPullRequestIcon, terminalSymbolPullRequestDoneIcon } from './terminalSymbolIcons.js';
 import { TerminalSuggestShownTracker } from './terminalSuggestShownTracker.js';
 
@@ -167,7 +166,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 	private readonly _inlineCompletionItem = new TerminalCompletionItem(this._inlineCompletion);
 
 	private _shouldSyncWhenReady: boolean = false;
-	private _suggestTelemetry: TerminalSuggestTelemetry | undefined;
 
 	private _completionRequestTimestamp: number | undefined;
 
@@ -216,7 +214,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 			if (commandDetection) {
 				if (this._promptInputModel !== commandDetection.promptInputModel) {
 					this._promptInputModel = commandDetection.promptInputModel;
-					this._suggestTelemetry = this._register(this._instantiationService.createInstance(TerminalSuggestTelemetry, commandDetection, this._promptInputModel));
 					this._promptInputModelSubscriptions.value = combinedDisposable(
 						this._promptInputModel.onDidChangeInput(e => this._sync(e)),
 						this._promptInputModel.onDidFinishInput(() => {
@@ -766,12 +763,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		}
 		// Track the time when completions are shown for the first time
 		if (this._completionRequestTimestamp !== undefined) {
-			const completionLatency = Date.now() - this._completionRequestTimestamp;
-			if (this._suggestTelemetry && this._discoverability) {
-				const firstShown = this._discoverability.getFirstShown(this.shellType);
-				this._discoverability.updateShown();
-				this._suggestTelemetry.logCompletionLatency(this._sessionId, completionLatency, firstShown);
-			}
 			this._completionRequestTimestamp = undefined;
 		}
 		this._logService.trace('SuggestAddon#_showCompletions suggestWidget.showSuggestions');
@@ -914,7 +905,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 
 		const initialPromptInputState = this._mostRecentPromptInputState;
 		if (!suggestion?.item || !initialPromptInputState || this._leadingLineContent === undefined || !this._model) {
-			this._suggestTelemetry?.acceptCompletion(this._sessionId, undefined, this._mostRecentPromptInputState?.value);
 			return;
 		}
 		SuggestAddon.lastAcceptedCompletionTimestamp = Date.now();
@@ -1000,7 +990,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 
 		// Send the completion
 		this._onAcceptedCompletion.fire(resultSequence);
-		this._suggestTelemetry?.acceptCompletion(this._sessionId, completion, this._mostRecentPromptInputState?.value);
 		this.hideSuggestWidget(true);
 	}
 

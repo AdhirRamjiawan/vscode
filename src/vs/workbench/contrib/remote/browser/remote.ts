@@ -8,7 +8,6 @@ import * as nls from '../../../../nls.js';
 import * as dom from '../../../../base/browser/dom.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
@@ -532,7 +531,6 @@ class RemoteViewPaneContainer extends FilterViewPaneContainer implements IViewMo
 
 	constructor(
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService configurationService: IConfigurationService,
@@ -544,7 +542,7 @@ class RemoteViewPaneContainer extends FilterViewPaneContainer implements IViewMo
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@ILogService logService: ILogService,
 	) {
-		super(VIEWLET_ID, remoteExplorerService.onDidChangeTargetType, configurationService, layoutService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService, viewDescriptorService, logService);
+		super(VIEWLET_ID, remoteExplorerService.onDidChangeTargetType, configurationService, layoutService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService, viewDescriptorService, logService);
 		this.addConstantViewDescriptors([this.helpPanelDescriptor]);
 		this._register(this.remoteSwitcher = this.instantiationService.createInstance(SwitchRemoteViewItem));
 		this._register(this.remoteExplorerService.onDidChangeHelpInformation(extensions => {
@@ -794,8 +792,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 		@ICommandService commandService: ICommandService,
 		@IQuickInputService quickInputService: IQuickInputService,
 		@ILogService logService: ILogService,
-		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService
+		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService
 	) {
 		super();
 		const connection = remoteAgentService.getConnection();
@@ -871,12 +868,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						millisSinceLastIncomingData: number;
 						attempt: number;
 					};
-					telemetryService.publicLog2<ReconnectReloadEvent, ReconnectReloadClassification>('remoteReconnectionReload', {
-						remoteName: getRemoteName(environmentService.remoteAuthority),
-						reconnectionToken: reconnectionToken,
-						millisSinceLastIncomingData: Date.now() - lastIncomingDataTime,
-						attempt: reconnectionAttempts
-					});
 
 					commandService.executeCommand(ReloadWindowAction.ID);
 				}
@@ -908,10 +899,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 							remoteName: string | undefined;
 							reconnectionToken: string;
 						};
-						telemetryService.publicLog2<RemoteConnectionLostEvent, RemoteConnectionLostClassification>('remoteConnectionLost', {
-							remoteName: getRemoteName(environmentService.remoteAuthority),
-							reconnectionToken: e.reconnectionToken,
-						});
 
 						if (visibleProgress || e.millisSinceLastIncomingData > DISCONNECT_PROMPT_TIME) {
 							if (!visibleProgress) {
@@ -933,27 +920,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						reconnectionToken = e.reconnectionToken;
 						lastIncomingDataTime = Date.now() - e.millisSinceLastIncomingData;
 						reconnectionAttempts = e.attempt;
-
-						type RemoteReconnectionRunningClassification = {
-							owner: 'alexdima';
-							comment: 'The remote connection state is now `ReconnectionRunning`';
-							remoteName: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The name of the resolver.' };
-							reconnectionToken: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The identifier of the connection.' };
-							millisSinceLastIncomingData: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Elapsed time (in ms) since data was last received.' };
-							attempt: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The reconnection attempt counter.' };
-						};
-						type RemoteReconnectionRunningEvent = {
-							remoteName: string | undefined;
-							reconnectionToken: string;
-							millisSinceLastIncomingData: number;
-							attempt: number;
-						};
-						telemetryService.publicLog2<RemoteReconnectionRunningEvent, RemoteReconnectionRunningClassification>('remoteReconnectionRunning', {
-							remoteName: getRemoteName(environmentService.remoteAuthority),
-							reconnectionToken: e.reconnectionToken,
-							millisSinceLastIncomingData: e.millisSinceLastIncomingData,
-							attempt: e.attempt
-						});
 
 						if (visibleProgress || e.millisSinceLastIncomingData > DISCONNECT_PROMPT_TIME) {
 							visibleProgress = showProgress(null, [reloadButton]);
@@ -991,13 +957,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 							attempt: number;
 							handled: boolean;
 						};
-						telemetryService.publicLog2<RemoteReconnectionPermanentFailureEvent, RemoteReconnectionPermanentFailureClassification>('remoteReconnectionPermanentFailure', {
-							remoteName: getRemoteName(environmentService.remoteAuthority),
-							reconnectionToken: e.reconnectionToken,
-							millisSinceLastIncomingData: e.millisSinceLastIncomingData,
-							attempt: e.attempt,
-							handled: e.handled
-						});
 
 						hideProgress();
 
@@ -1022,27 +981,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						reconnectionToken = e.reconnectionToken;
 						lastIncomingDataTime = Date.now() - e.millisSinceLastIncomingData;
 						reconnectionAttempts = e.attempt;
-
-						type RemoteConnectionGainClassification = {
-							owner: 'alexdima';
-							comment: 'The remote connection state is now `ConnectionGain`';
-							remoteName: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The name of the resolver.' };
-							reconnectionToken: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The identifier of the connection.' };
-							millisSinceLastIncomingData: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Elapsed time (in ms) since data was last received.' };
-							attempt: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The reconnection attempt counter.' };
-						};
-						type RemoteConnectionGainEvent = {
-							remoteName: string | undefined;
-							reconnectionToken: string;
-							millisSinceLastIncomingData: number;
-							attempt: number;
-						};
-						telemetryService.publicLog2<RemoteConnectionGainEvent, RemoteConnectionGainClassification>('remoteConnectionGain', {
-							remoteName: getRemoteName(environmentService.remoteAuthority),
-							reconnectionToken: e.reconnectionToken,
-							millisSinceLastIncomingData: e.millisSinceLastIncomingData,
-							attempt: e.attempt
-						});
 
 						hideProgress();
 						break;

@@ -5,7 +5,6 @@
 
 import { IAction, IActionRunner, ActionRunner } from '../../base/common/actions.js';
 import { Component } from '../common/component.js';
-import { ITelemetryService } from '../../platform/telemetry/common/telemetry.js';
 import { IComposite, ICompositeControl } from '../common/composite.js';
 import { Event, Emitter } from '../../base/common/event.js';
 import { IThemeService } from '../../platform/theme/common/themeService.js';
@@ -87,7 +86,6 @@ export abstract class Composite extends Component implements IComposite {
 
 	constructor(
 		id: string,
-		protected readonly telemetryService: ITelemetryService,
 		themeService: IThemeService,
 		storageService: IStorageService
 	) {

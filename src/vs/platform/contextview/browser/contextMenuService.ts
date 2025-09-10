@@ -13,7 +13,6 @@ import { IMenuService, MenuId } from '../../actions/common/actions.js';
 import { IContextKeyService } from '../../contextkey/common/contextkey.js';
 import { IKeybindingService } from '../../keybinding/common/keybinding.js';
 import { INotificationService } from '../../notification/common/notification.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { ContextMenuHandler, IContextMenuHandlerOptions } from './contextMenuHandler.js';
 import { IContextMenuMenuDelegate, IContextMenuService, IContextViewService } from './contextView.js';
 
@@ -24,7 +23,7 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 	private _contextMenuHandler: ContextMenuHandler | undefined = undefined;
 	private get contextMenuHandler(): ContextMenuHandler {
 		if (!this._contextMenuHandler) {
-			this._contextMenuHandler = new ContextMenuHandler(this.contextViewService, this.telemetryService, this.notificationService, this.keybindingService);
+			this._contextMenuHandler = new ContextMenuHandler(this.contextViewService, this.notificationService, this.keybindingService);
 		}
 
 		return this._contextMenuHandler;

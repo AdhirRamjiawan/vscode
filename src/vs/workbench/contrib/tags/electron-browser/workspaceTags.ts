@@ -6,7 +6,6 @@
 import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IFileService, IFileStat } from '../../../../platform/files/common/files.js';
-import { ITelemetryService, TelemetryLevel } from '../../../../platform/telemetry/common/telemetry.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IWorkbenchContribution } from '../../../common/contributions.js';
 import { ITextFileService, } from '../../../services/textfile/common/textfiles.js';
@@ -28,7 +27,6 @@ export class WorkspaceTags implements IWorkbenchContribution {
 	constructor(
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IRequestService private readonly requestService: IRequestService,
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@IWorkspaceTagsService private readonly workspaceTagsService: IWorkspaceTagsService,
@@ -36,9 +34,7 @@ export class WorkspaceTags implements IWorkbenchContribution {
 		@IProductService private readonly productService: IProductService,
 		@INativeHostService private readonly nativeHostService: INativeHostService
 	) {
-		if (this.telemetryService.telemetryLevel === TelemetryLevel.USAGE) {
-			this.report();
-		}
+
 	}
 
 	private async report(): Promise<void> {
@@ -67,35 +63,8 @@ export class WorkspaceTags implements IWorkbenchContribution {
 			value = 'Unknown';
 		}
 
-		this.telemetryService.publicLog2<{ edition: string }, { owner: 'sbatten'; comment: 'Information about the Windows edition.'; edition: { classification: 'SystemMetaData'; purpose: 'BusinessInsight'; comment: 'The Windows edition.' } }>('windowsEdition', { edition: value });
 	}
 
-	private async getWorkspaceInformation(): Promise<IWorkspaceInformation> {
-		const workspace = this.contextService.getWorkspace();
-		const state = this.contextService.getWorkbenchState();
-		const telemetryId = await this.workspaceTagsService.getTelemetryWorkspaceId(workspace, state);
-
-		return {
-			id: workspace.id,
-			telemetryId,
-			rendererSessionId: this.telemetryService.sessionId,
-			folders: workspace.folders,
-			transient: workspace.transient,
-			configuration: workspace.configuration
-		};
-	}
-
-	private reportWorkspaceTags(tags: Tags): void {
-		/* __GDPR__
-			"workspce.tags" : {
-				"owner": "lramos15",
-				"${include}": [
-					"${WorkspaceTags}"
-				]
-			}
-		*/
-		this.telemetryService.publicLog('workspce.tags', tags);
-	}
 
 	private reportRemoteDomains(workspaceUris: URI[]): void {
 		Promise.all<string[]>(workspaceUris.map(workspaceUri => {
@@ -120,7 +89,6 @@ export class WorkspaceTags implements IWorkbenchContribution {
 					"domains" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
-			this.telemetryService.publicLog('workspace.remotes', { domains: list.sort() });
 		}, onUnexpectedError);
 	}
 
@@ -199,7 +167,6 @@ export class WorkspaceTags implements IWorkbenchContribution {
 						]
 					}
 				*/
-				this.telemetryService.publicLog('workspace.azure', tags);
 			}
 		}).then(undefined, onUnexpectedError);
 	}

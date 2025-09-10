@@ -37,7 +37,6 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 	readonly onDidHideContextMenu = this._onDidHideContextMenu.event;
 
 	constructor(
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,

@@ -18,7 +18,6 @@ import { IContextKeyService } from '../../contextkey/common/contextkey.js';
 import { IContextMenuService } from '../../contextview/browser/contextView.js';
 import { IHoverService } from '../../hover/browser/hover.js';
 import { IKeybindingService } from '../../keybinding/common/keybinding.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 
 export type IButtonConfigProvider = (action: IAction, index: number) => {
 	showIcon?: boolean;
@@ -27,7 +26,6 @@ export type IButtonConfigProvider = (action: IAction, index: number) => {
 } | undefined;
 
 export interface IWorkbenchButtonBarOptions {
-	telemetrySource?: string;
 	buttonConfigProvider?: IButtonConfigProvider;
 }
 
@@ -46,20 +44,12 @@ export class WorkbenchButtonBar extends ButtonBar {
 		private readonly _options: IWorkbenchButtonBarOptions | undefined,
 		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IHoverService private readonly _hoverService: IHoverService,
 	) {
 		super(container);
 
 		this._actionRunner = this._store.add(new ActionRunner());
-		if (_options?.telemetrySource) {
-			this._actionRunner.onDidRun(e => {
-				telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>(
-					'workbenchActionExecuted',
-					{ id: e.action.id, from: _options.telemetrySource! }
-				);
-			}, undefined, this._store);
-		}
+
 	}
 
 	override dispose() {
@@ -184,10 +174,9 @@ export class MenuWorkbenchButtonBar extends WorkbenchButtonBar {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IHoverService hoverService: IHoverService,
 	) {
-		super(container, options, contextMenuService, keybindingService, telemetryService, hoverService);
+		super(container, options, contextMenuService, keybindingService, hoverService);
 
 		const menu = menuService.createMenu(menuId, contextKeyService);
 		this._store.add(menu);

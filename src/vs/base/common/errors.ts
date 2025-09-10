@@ -117,7 +117,6 @@ export interface SerializedError {
 	readonly name: string;
 	readonly message: string;
 	readonly stack: string;
-	readonly noTelemetry: boolean;
 	readonly code?: string;
 	readonly cause?: SerializedError;
 }
@@ -137,7 +136,6 @@ export function transformErrorForSerialization(error: any): any {
 			name,
 			message,
 			stack,
-			noTelemetry: ErrorNoTelemetry.isErrorNoTelemetry(error),
 			cause: cause ? transformErrorForSerialization(cause) : undefined,
 			code: (<ErrorWithCode>error).code
 		};
@@ -149,12 +147,10 @@ export function transformErrorForSerialization(error: any): any {
 
 export function transformErrorFromSerialization(data: SerializedError): Error {
 	let error: Error;
-	if (data.noTelemetry) {
-		error = new ErrorNoTelemetry();
-	} else {
-		error = new Error();
-		error.name = data.name;
-	}
+
+	error = new Error();
+	error.name = data.name;
+
 	error.message = data.message;
 	error.stack = data.stack;
 	if (data.code) {
@@ -286,33 +282,6 @@ export class NotSupportedError extends Error {
 
 export class ExpectedError extends Error {
 	readonly isExpected = true;
-}
-
-/**
- * Error that when thrown won't be logged in telemetry as an unhandled error.
- */
-export class ErrorNoTelemetry extends Error {
-	override readonly name: string;
-
-	constructor(msg?: string) {
-		super(msg);
-		this.name = 'CodeExpectedError';
-	}
-
-	public static fromError(err: Error): ErrorNoTelemetry {
-		if (err instanceof ErrorNoTelemetry) {
-			return err;
-		}
-
-		const result = new ErrorNoTelemetry();
-		result.message = err.message;
-		result.stack = err.stack;
-		return result;
-	}
-
-	public static isErrorNoTelemetry(err: Error): err is ErrorNoTelemetry {
-		return err.name === 'CodeExpectedError';
-	}
 }
 
 /**

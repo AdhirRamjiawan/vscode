@@ -12,7 +12,6 @@ import { URI } from '../../../base/common/uri.js';
 import { getErrorMessage } from '../../../base/common/errors.js';
 import { ILogService } from '../../log/common/log.js';
 import { arch } from '../../../base/common/process.js';
-import { TelemetryTrustedValue } from '../../telemetry/common/telemetryUtils.js';
 import { isString } from '../../../base/common/types.js';
 
 export function areSameExtensions(a: IExtensionIdentifier, b: IExtensionIdentifier): boolean {
@@ -104,51 +103,6 @@ export function groupByExtension<T>(extensions: T[], getExtensionIdentifier: (t:
 	return byExtension;
 }
 
-export function getLocalExtensionTelemetryData(extension: ILocalExtension) {
-	return {
-		id: extension.identifier.id,
-		name: extension.manifest.name,
-		galleryId: null,
-		publisherId: extension.publisherId,
-		publisherName: extension.manifest.publisher,
-		publisherDisplayName: extension.publisherDisplayName,
-		dependencies: extension.manifest.extensionDependencies && extension.manifest.extensionDependencies.length > 0
-	};
-}
-
-
-/* __GDPR__FRAGMENT__
-	"GalleryExtensionTelemetryData" : {
-		"id" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"name": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"extensionVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"galleryId": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherId": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherName": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherDisplayName": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"isPreReleaseVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"dependencies": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-		"isSigned": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"${include}": [
-			"${GalleryExtensionTelemetryData2}"
-		]
-	}
-*/
-export function getGalleryExtensionTelemetryData(extension: IGalleryExtension) {
-	return {
-		id: new TelemetryTrustedValue(extension.identifier.id),
-		name: new TelemetryTrustedValue(extension.name),
-		extensionVersion: extension.version,
-		galleryId: extension.identifier.uuid,
-		publisherId: extension.publisherId,
-		publisherName: extension.publisher,
-		publisherDisplayName: extension.publisherDisplayName,
-		isPreReleaseVersion: extension.properties.isPreReleaseVersion,
-		dependencies: !!(extension.properties.dependencies && extension.properties.dependencies.length > 0),
-		isSigned: extension.isSigned,
-		...extension.telemetryData
-	};
-}
 
 export const BetterMergeId = new ExtensionIdentifier('pprice.better-merge');
 

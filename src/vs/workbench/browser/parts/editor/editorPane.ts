@@ -81,7 +81,6 @@ export abstract class EditorPane extends Composite implements IEditorPane {
 	constructor(
 		id: string,
 		readonly group: IEditorGroup,
-		telemetryService: ITelemetryService,
 		themeService: IThemeService,
 		storageService: IStorageService
 	) {

@@ -2123,8 +2123,7 @@ export class ExtHostLanguageFeatures extends CoreDisposable implements extHostPr
 		private readonly _commands: ExtHostCommands,
 		private readonly _diagnostics: ExtHostDiagnostics,
 		private readonly _logService: ILogService,
-		private readonly _apiDeprecation: IExtHostApiDeprecationService,
-		private readonly _extensionTelemetry: IExtHostTelemetry
+		private readonly _apiDeprecation: IExtHostApiDeprecationService
 	) {
 		super();
 		this._proxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadLanguageFeatures);

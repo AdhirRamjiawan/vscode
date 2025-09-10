@@ -15,7 +15,6 @@ import { IAccessibilityService } from '../../accessibility/common/accessibility.
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 import { observableConfigValue } from '../../observable/common/platformObservableUtils.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 
 export const IAccessibilitySignalService = createDecorator<IAccessibilitySignalService>('accessibilitySignalService');
 
@@ -74,12 +73,10 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 	readonly _serviceBrand: undefined;
 	private readonly sounds: Map<string, HTMLAudioElement>;
 	private readonly screenReaderAttached;
-	private readonly sentTelemetry;
 
 	constructor(
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IAccessibilityService private readonly accessibilityService: IAccessibilityService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		super();
 		this.sounds = new Map();
@@ -87,7 +84,6 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 			this.accessibilityService.onDidChangeScreenReaderOptimized,
 			() => /** @description accessibilityService.onDidChangeScreenReaderOptimized */ this.accessibilityService.isScreenReaderOptimized()
 		);
-		this.sentTelemetry = new Set<string>();
 		this.playingSounds = new Set<Sound>();
 		this._signalConfigValue = new CachedFunction((signal: AccessibilitySignal) => observableConfigValue<{
 			sound: EnabledState;
@@ -129,15 +125,11 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 
 		const shouldPlaySound = options.modality === 'sound' || options.modality === undefined;
 		if (shouldPlaySound && this.isSoundEnabled(signal, options.userGesture)) {
-			this.sendSignalTelemetry(signal, options.source);
 			await this.playSound(signal.sound.getSound(), options.allowManyInParallel);
 		}
 	}
 
 	public async playSignals(signals: (AccessibilitySignal | { signal: AccessibilitySignal; source: string })[]): Promise<void> {
-		for (const signal of signals) {
-			this.sendSignalTelemetry('signal' in signal ? signal.signal : signal, 'source' in signal ? signal.source : undefined);
-		}
 		const signalArray = signals.map(s => 'signal' in s ? s.signal : s);
 		const announcements = signalArray.filter(signal => this.isAnnouncementEnabled(signal)).map(s => s.announcementMessage);
 		if (announcements.length) {
@@ -150,34 +142,6 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 
 	}
 
-
-	private sendSignalTelemetry(signal: AccessibilitySignal, source: string | undefined): void {
-		const isScreenReaderOptimized = this.accessibilityService.isScreenReaderOptimized();
-		const key = signal.name + (source ? `::${source}` : '') + (isScreenReaderOptimized ? '{screenReaderOptimized}' : '');
-		// Only send once per user session
-		if (this.sentTelemetry.has(key) || this.getVolumeInPercent() === 0) {
-			return;
-		}
-		this.sentTelemetry.add(key);
-
-		this.telemetryService.publicLog2<{
-			signal: string;
-			source: string;
-			isScreenReaderOptimized: boolean;
-		}, {
-			owner: 'hediet';
-
-			signal: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The signal that was played.' };
-			source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The source that triggered the signal (e.g. "diffEditorNavigation").' };
-			isScreenReaderOptimized: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the user is using a screen reader' };
-
-			comment: 'This data is collected to understand how signals are used and if more signals should be added.';
-		}>('signal.played', {
-			signal: signal.name,
-			source: source ?? '',
-			isScreenReaderOptimized,
-		});
-	}
 
 	private getVolumeInPercent(): number {
 		const volume = this.configurationService.getValue<number>('accessibility.signalOptions.volume');

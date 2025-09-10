@@ -10,7 +10,7 @@ import { ICommandMetadata } from '../../../platform/commands/common/commands.js'
 import * as extHostTypes from './extHostTypes.js';
 import * as extHostTypeConverter from './extHostTypeConverters.js';
 import { cloneAndChange } from '../../../base/common/objects.js';
-import { MainContext, MainThreadCommandsShape, ExtHostCommandsShape, ICommandDto, ICommandMetadataDto, MainThreadTelemetryShape } from './extHost.protocol.js';
+import { MainContext, MainThreadCommandsShape, ExtHostCommandsShape, ICommandDto, ICommandMetadataDto } from './extHost.protocol.js';
 import { isNonEmptyArray } from '../../../base/common/arrays.js';
 import * as languages from '../../../editor/common/languages.js';
 import type * as vscode from 'vscode';
@@ -29,8 +29,6 @@ import { SerializableObjectWithBuffers } from '../../services/extensions/common/
 import { toErrorMessage } from '../../../base/common/errorMessage.js';
 import { StopWatch } from '../../../base/common/stopwatch.js';
 import { IExtensionDescription } from '../../../platform/extensions/common/extensions.js';
-import { TelemetryTrustedValue } from '../../../platform/telemetry/common/telemetryUtils.js';
-import { IExtHostTelemetry } from './extHostTelemetry.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { isCancellationError } from '../../../base/common/errors.js';
 
@@ -53,23 +51,18 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 
 	private readonly _commands = new Map<string, CommandHandler>();
 	private readonly _apiCommands = new Map<string, ApiCommand>();
-	#telemetry: MainThreadTelemetryShape;
 
 	private readonly _logService: ILogService;
-	readonly #extHostTelemetry: IExtHostTelemetry;
 	private readonly _argumentProcessors: ArgumentProcessor[];
 
 	readonly converter: CommandsConverter;
 
 	constructor(
 		@IExtHostRpcService extHostRpc: IExtHostRpcService,
-		@ILogService logService: ILogService,
-		@IExtHostTelemetry extHostTelemetry: IExtHostTelemetry
+		@ILogService logService: ILogService
 	) {
 		this.#proxy = extHostRpc.getProxy(MainContext.MainThreadCommands);
 		this._logService = logService;
-		this.#extHostTelemetry = extHostTelemetry;
-		this.#telemetry = extHostRpc.getProxy(MainContext.MainThreadTelemetry);
 		this.converter = new CommandsConverter(
 			this,
 			id => {
@@ -266,7 +259,6 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 			}
 
 			if (command.extension?.identifier) {
-				const reported = this.#extHostTelemetry.onExtensionError(command.extension.identifier, err);
 				this._logService.trace('forwarded error to extension?', reported, command.extension?.identifier);
 			}
 
@@ -279,36 +271,9 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 			};
 		}
 		finally {
-			this._reportTelemetry(command, id, stopWatch.elapsed());
 		}
 	}
 
-	private _reportTelemetry(command: CommandHandler, id: string, duration: number) {
-		if (!command.extension) {
-			return;
-		}
-		if (id.startsWith('code.copilot.logStructured')) {
-			// This command is very active. See https://github.com/microsoft/vscode/issues/254153.
-			return;
-		}
-		type ExtensionActionTelemetry = {
-			extensionId: string;
-			id: TelemetryTrustedValue<string>;
-			duration: number;
-		};
-		type ExtensionActionTelemetryMeta = {
-			extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The id of the extension handling the command, informing which extensions provide most-used functionality.' };
-			id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The id of the command, to understand which specific extension features are most popular.' };
-			duration: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The duration of the command execution, to detect performance issues' };
-			owner: 'digitarald';
-			comment: 'Used to gain insight on the most popular commands used from extensions';
-		};
-		this.#telemetry.$publicLog2<ExtensionActionTelemetry, ExtensionActionTelemetryMeta>('Extension:ActionExecuted', {
-			extensionId: command.extension.identifier.value,
-			id: new TelemetryTrustedValue(id),
-			duration: duration,
-		});
-	}
 
 	$executeContributedCommand(id: string, ...args: any[]): Promise<unknown> {
 		this._logService.trace('ExtHostCommands#$executeContributedCommand', id);

@@ -89,7 +89,6 @@ export interface PerformanceInfo {
 }
 
 export interface IWorkspaceInformation extends IWorkspace {
-	telemetryId: string | undefined;
 	rendererSessionId: string;
 }
 

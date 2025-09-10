@@ -21,7 +21,6 @@ import { ICommandService } from '../../commands/common/commands.js';
 import { IContextKeyService } from '../../contextkey/common/contextkey.js';
 import { IContextMenuService } from '../../contextview/browser/contextView.js';
 import { IKeybindingService } from '../../keybinding/common/keybinding.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { IActionViewItemService } from './actionViewItemService.js';
 import { IInstantiationService } from '../../instantiation/common/instantiation.js';
 
@@ -59,12 +58,6 @@ export type IWorkbenchToolBarOptions = IToolBarOptions & {
 	 */
 	menuOptions?: IMenuActionOptions;
 
-	/**
-	 * When set the `workbenchActionExecuted` is automatically send for each invoked action. The `from` property
-	 * of the event will the passed `telemetrySource`-value
-	 */
-	telemetrySource?: string;
-
 	/** This is controlled by the WorkbenchToolBar */
 	allowContextMenu?: never;
 
@@ -95,8 +88,7 @@ export class WorkbenchToolBar extends ToolBar {
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService,
-		@ICommandService private readonly _commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@ICommandService private readonly _commandService: ICommandService
 	) {
 		super(container, _contextMenuService, {
 			// defaults
@@ -105,17 +97,8 @@ export class WorkbenchToolBar extends ToolBar {
 			..._options,
 			// mandatory (overide options)
 			allowContextMenu: true,
-			skipTelemetry: typeof _options?.telemetrySource === 'string',
 		});
 
-		// telemetry logic
-		const telemetrySource = _options?.telemetrySource;
-		if (telemetrySource) {
-			this._store.add(this.actionBar.onDidRun(e => telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>(
-				'workbenchActionExecuted',
-				{ id: e.action.id, from: telemetrySource })
-			));
-		}
 	}
 
 	override setActions(_primary: readonly IAction[], _secondary: readonly IAction[] = [], menuIds?: readonly MenuId[]): void {
@@ -274,7 +257,6 @@ export class WorkbenchToolBar extends ToolBar {
 					// add context menu actions (iff appicable)
 					menuId: this._options?.contextMenu,
 					menuActionOptions: { renderShortTitle: true, ...this._options?.menuOptions },
-					skipTelemetry: typeof this._options?.telemetrySource === 'string',
 					contextKeyService: this._contextKeyService,
 				});
 			}));
@@ -341,7 +323,6 @@ export class MenuWorkbenchToolBar extends WorkbenchToolBar {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@ICommandService commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IActionViewItemService actionViewService: IActionViewItemService,
 		@IInstantiationService instantiationService: IInstantiationService,
 	) {
@@ -359,7 +340,7 @@ export class MenuWorkbenchToolBar extends WorkbenchToolBar {
 				}
 				return createActionViewItem(instantiationService, action, opts);
 			}
-		}, menuService, contextKeyService, contextMenuService, keybindingService, commandService, telemetryService);
+		}, menuService, contextKeyService, contextMenuService, keybindingService, commandService);
 
 		// update logic
 		const menu = this._store.add(menuService.createMenu(menuId, contextKeyService, { emitEventsForSubmenuChanges: true, eventDebounceDelay: options?.eventDebounceDelay }));

@@ -64,7 +64,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 	constructor(
 		private _contextKeyService: IContextKeyService,
 		protected _commandService: ICommandService,
-		protected _telemetryService: ITelemetryService,
 		private _notificationService: INotificationService,
 		protected _logService: ILogService,
 	) {

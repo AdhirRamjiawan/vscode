@@ -11,12 +11,10 @@ import { IUpdateService } from '../../../../platform/update/common/update.js';
 import { ILifecycleService, LifecyclePhase } from '../../lifecycle/common/lifecycle.js';
 import { IEditorService } from '../../editor/common/editorService.js';
 import { IAccessibilityService } from '../../../../platform/accessibility/common/accessibility.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { Barrier, timeout } from '../../../../base/common/async.js';
 import { IWorkbenchLayoutService } from '../../layout/browser/layoutService.js';
 import { IPaneCompositePartService } from '../../panecomposite/browser/panecomposite.js';
 import { ViewContainerLocation } from '../../../common/views.js';
-import { TelemetryTrustedValue } from '../../../../platform/telemetry/common/telemetryUtils.js';
 import { isWeb } from '../../../../base/common/platform.js';
 import { createBlobWorker } from '../../../../base/browser/webWorkerFactory.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
@@ -524,7 +522,6 @@ export abstract class AbstractTimerService implements ITimerService {
 
 	private readonly _barrier = new Barrier();
 	private readonly _marks = new PerfMarks();
-	private readonly _rndValueShouldSendTelemetry = Math.random() < .03; // 3% of users
 
 	private _startupMetrics?: IStartupMetrics;
 
@@ -538,7 +535,6 @@ export abstract class AbstractTimerService implements ITimerService {
 		@IPaneCompositePartService private readonly _paneCompositeService: IPaneCompositePartService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService
 	) {
 		Promise.all([
@@ -634,53 +630,6 @@ export abstract class AbstractTimerService implements ITimerService {
 		return this._marks.getStartTime(mark);
 	}
 
-	private _reportStartupTimes(metrics: IStartupMetrics): void {
-		// report IStartupMetrics as telemetry
-		/* __GDPR__
-			"startupTimeVaried" : {
-				"owner": "jrieken",
-				"${include}": [
-					"${IStartupMetrics}"
-				]
-			}
-		*/
-		this._telemetryService.publicLog('startupTimeVaried', metrics);
-	}
-
-	protected _shouldReportPerfMarks(): boolean {
-		return this._rndValueShouldSendTelemetry;
-	}
-
-	private _reportPerformanceMarks(source: string, marks: perf.PerformanceMark[]) {
-
-		if (!this._shouldReportPerfMarks()) {
-			// the `startup.timer.mark` event is send very often. In order to save resources
-			// we let some of our instances/sessions send this event
-			return;
-		}
-
-		// report raw timers as telemetry. each mark is send a separate telemetry
-		// event and it is "normalized" to a relative timestamp where the first mark
-		// defines the start
-
-		type Mark = { source: string; name: TelemetryTrustedValue<string>; startTime: number };
-		type MarkClassification = {
-			owner: 'jrieken';
-			comment: 'Information about a performance marker';
-			source: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Where this marker was generated, e.g main, renderer, extension host' };
-			name: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The name of this marker (as defined in source code)' };
-			startTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The absolute timestamp (unix time)' };
-		};
-
-		for (const mark of marks) {
-			this._telemetryService.publicLog2<Mark, MarkClassification>('startup.timer.mark', {
-				source,
-				name: new TelemetryTrustedValue(mark.name),
-				startTime: mark.startTime
-			});
-		}
-
-	}
 
 	private async _computeStartupMetrics(): Promise<IStartupMetrics> {
 		const initialStartup = this._isInitialStartup();

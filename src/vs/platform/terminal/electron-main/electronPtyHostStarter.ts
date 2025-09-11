@@ -7,7 +7,6 @@ import { IEnvironmentMainService } from '../../environment/electron-main/environ
 import { parsePtyHostDebugPort } from '../../environment/node/environmentService.js';
 import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
 import { ILogService } from '../../log/common/log.js';
-import { NullTelemetryService } from '../../telemetry/common/telemetryUtils.js';
 import { IReconnectConstants, TerminalSettingId } from '../common/terminal.js';
 import { IPtyHostConnection, IPtyHostStarter } from '../node/ptyHost.js';
 import { UtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
@@ -47,7 +46,7 @@ export class ElectronPtyHostStarter extends Disposable implements IPtyHostStarte
 	}
 
 	start(): IPtyHostConnection {
-		this.utilityProcess = new UtilityProcess(this._logService, NullTelemetryService, this._lifecycleMainService);
+		this.utilityProcess = new UtilityProcess(this._logService, this._lifecycleMainService);
 
 		const inspectParams = parsePtyHostDebugPort(this._environmentMainService.args, this._environmentMainService.isBuilt);
 		const execArgv = inspectParams.port ? [

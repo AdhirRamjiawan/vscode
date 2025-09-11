@@ -21,7 +21,6 @@ import { areSameExtensions } from './extensionManagementUtil.js';
 import { IExtensionRecommendationNotificationService, RecommendationsNotificationResult, RecommendationSource } from '../../extensionRecommendations/common/extensionRecommendations.js';
 import { ExtensionType } from '../../extensions/common/extensions.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../storage/common/storage.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 
 //#region Base Extension Tips Service
 
@@ -114,7 +113,6 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 			readonly onDidOpenMainWindow: Event<unknown>;
 			readonly onDidFocusMainWindow: Event<unknown>;
 		},
-		private readonly telemetryService: ITelemetryService,
 		private readonly extensionManagementService: IExtensionManagementService,
 		private readonly storageService: IStorageService,
 		private readonly extensionRecommendationNotificationService: IExtensionRecommendationNotificationService,
@@ -150,10 +148,6 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 			});
 		}
 
-		/*
-			3s has come out to be the good number to fetch and prompt important exe based recommendations
-			Also fetch important exe based recommendations for reporting telemetry
-		*/
 		disposableTimeout(async () => {
 			await this.collectTips();
 			this.promptHighImportanceExeBasedTip();
@@ -184,21 +178,8 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 		const importantExeBasedRecommendations = new Map<string, IExecutableBasedExtensionTip>();
 		importantExeBasedTips.forEach(tip => importantExeBasedRecommendations.set(tip.extensionId.toLowerCase(), tip));
 
-		const { installed, uninstalled: recommendations } = this.groupByInstalled([...importantExeBasedRecommendations.keys()], local);
+		const { uninstalled: recommendations } = this.groupByInstalled([...importantExeBasedRecommendations.keys()], local);
 
-		/* Log installed and uninstalled exe based recommendations */
-		for (const extensionId of installed) {
-			const tip = importantExeBasedRecommendations.get(extensionId);
-			if (tip) {
-				this.telemetryService.publicLog2<{ exeName: string; extensionId: string }, ExeExtensionRecommendationsClassification>('exeExtensionRecommendations:alreadyInstalled', { extensionId, exeName: tip.exeName });
-			}
-		}
-		for (const extensionId of recommendations) {
-			const tip = importantExeBasedRecommendations.get(extensionId);
-			if (tip) {
-				this.telemetryService.publicLog2<{ exeName: string; extensionId: string }, ExeExtensionRecommendationsClassification>('exeExtensionRecommendations:notInstalled', { extensionId, exeName: tip.exeName });
-			}
-		}
 
 		const promptedExecutableTips = this.getPromptedExecutableTips();
 		const tipsByExe = new Map<string, IExecutableBasedExtensionTip[]>();

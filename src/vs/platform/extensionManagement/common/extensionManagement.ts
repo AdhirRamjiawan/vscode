@@ -243,7 +243,6 @@ export interface IGalleryExtension {
 	detailsLink?: string;
 	ratingLink?: string;
 	supportLink?: string;
-	telemetryData?: any;
 	queryContext?: IStringDictionary<any>;
 }
 

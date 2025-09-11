@@ -29,7 +29,6 @@ import { IProductService } from '../../product/common/productService.js';
 import { IIPCObjectUrl, IProtocolMainService } from '../../protocol/electron-main/protocol.js';
 import { resolveMarketplaceHeaders } from '../../externalServices/common/marketplace.js';
 import { IApplicationStorageMainService, IStorageMainService } from '../../storage/electron-main/storageMainService.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { ThemeIcon } from '../../../base/common/themables.js';
 import { IThemeMainService } from '../../theme/electron-main/themeMainService.js';
 import { getMenuBarVisibility, IFolderToOpen, INativeWindowConfiguration, IWindowSettings, IWorkspaceToOpen, MenuBarVisibility, hasNativeTitlebar, useNativeFullScreen, useWindowControlsOverlay, DEFAULT_CUSTOM_TITLEBAR_HEIGHT, TitlebarStyle, MenuSettings } from '../../window/common/window.js';
@@ -639,7 +638,6 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 		@IThemeMainService private readonly themeMainService: IThemeMainService,
 		@IWorkspacesManagementMainService private readonly workspacesManagementMainService: IWorkspacesManagementMainService,
 		@IBackupMainService private readonly backupMainService: IBackupMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IDialogMainService private readonly dialogMainService: IDialogMainService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
 		@IProductService private readonly productService: IProductService,
@@ -831,8 +829,7 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 				this.environmentMainService,
 				this.configurationService,
 				this.fileService,
-				this.applicationStorageMainService,
-				this.telemetryService);
+				this.applicationStorageMainService);
 		}
 
 		return this.marketplaceHeadersPromise;
@@ -859,24 +856,6 @@ export class CodeWindow extends BaseWindow implements ICodeWindow {
 				break;
 		}
 
-		// Telemetry
-		type WindowErrorClassification = {
-			type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The type of window error to understand the nature of the error better.' };
-			reason: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The reason of the window error to understand the nature of the error better.' };
-			code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The exit code of the window process to understand the nature of the error better' };
-			owner: 'bpasero';
-			comment: 'Provides insight into reasons the vscode window had an error.';
-		};
-		type WindowErrorEvent = {
-			type: WindowError;
-			reason: string | undefined;
-			code: number | undefined;
-		};
-		this.telemetryService.publicLog2<WindowErrorEvent, WindowErrorClassification>('windowerror', {
-			type,
-			reason: details?.reason,
-			code: details?.exitCode
-		});
 
 		// Inform User if non-recoverable
 		switch (type) {

@@ -701,7 +701,7 @@ class Extensions extends Disposable {
 				}
 			}
 		}
-
+	}
 	private async mapInstalledExtensionWithCompatibleGalleryExtension(galleryExtensions: IGalleryExtension[], productVersion: IProductVersion): Promise<[Extension, IGalleryExtension][]> {
 		const mappedExtensions = this.mapInstalledExtensionWithGalleryExtension(galleryExtensions);
 		const targetPlatform = await this.server.extensionManagementService.getTargetPlatform();

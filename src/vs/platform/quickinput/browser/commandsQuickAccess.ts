@@ -24,7 +24,6 @@ import { FastAndSlowPicks, IPickerQuickAccessItem, IPickerQuickAccessProviderOpt
 import { IQuickAccessProviderRunOptions } from '../common/quickAccess.js';
 import { IQuickPickSeparator } from '../common/quickInput.js';
 import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from '../../storage/common/storage.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 
 export interface ICommandQuickPick extends IPickerQuickAccessItem {
 	readonly commandId: string;
@@ -58,7 +57,6 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IKeybindingService protected readonly keybindingService: IKeybindingService,
 		@ICommandService private readonly commandService: ICommandService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IDialogService private readonly dialogService: IDialogService
 	) {
 		super(AbstractCommandsQuickAccessProvider.PREFIX, options);
@@ -266,13 +264,6 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 
 				// Add to history
 				this.commandsHistory.push(commandPick.commandId);
-
-				// Telementry
-				this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-					id: commandPick.commandId,
-					from: runOptions?.from ?? 'quick open'
-				});
-
 				// Run
 				try {
 					commandPick.args?.length

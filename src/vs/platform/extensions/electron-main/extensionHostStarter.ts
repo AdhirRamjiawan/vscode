@@ -10,7 +10,6 @@ import { Disposable, IDisposable } from '../../../base/common/lifecycle.js';
 import { IExtensionHostProcessOptions, IExtensionHostStarter } from '../common/extensionHostStarter.js';
 import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
 import { ILogService } from '../../log/common/log.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { WindowUtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
 import { IWindowsMainService } from '../../windows/electron-main/windows.js';
 import { IConfigurationService } from '../../configuration/common/configuration.js';
@@ -28,7 +27,6 @@ export class ExtensionHostStarter extends Disposable implements IDisposable, IEx
 		@ILogService private readonly _logService: ILogService,
 		@ILifecycleMainService private readonly _lifecycleMainService: ILifecycleMainService,
 		@IWindowsMainService private readonly _windowsMainService: IWindowsMainService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 	) {
 		super();
@@ -74,7 +72,7 @@ export class ExtensionHostStarter extends Disposable implements IDisposable, IEx
 			throw canceled();
 		}
 		const id = String(++ExtensionHostStarter._lastId);
-		const extHost = new WindowUtilityProcess(this._logService, this._windowsMainService, this._telemetryService, this._lifecycleMainService);
+		const extHost = new WindowUtilityProcess(this._logService, this._windowsMainService, this._lifecycleMainService);
 		this._extHosts.set(id, extHost);
 		const disposable = extHost.onExit(({ pid, code, signal }) => {
 			disposable.dispose();

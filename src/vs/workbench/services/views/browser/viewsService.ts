@@ -18,7 +18,6 @@ import { InstantiationType, registerSingleton } from '../../../../platform/insta
 import { IPaneComposite } from '../../../common/panecomposite.js';
 import { ServicesAccessor, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
-import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
 import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
 import { IExtensionService } from '../../extensions/common/extensions.js';
@@ -641,7 +640,6 @@ export class ViewsService extends Disposable implements IViewsService {
 		const that = this;
 		class PaneContainer extends PaneComposite {
 			constructor(
-				@ITelemetryService telemetryService: ITelemetryService,
 				@IWorkspaceContextService contextService: IWorkspaceContextService,
 				@IStorageService storageService: IStorageService,
 				@IInstantiationService instantiationService: IInstantiationService,
@@ -649,7 +647,7 @@ export class ViewsService extends Disposable implements IViewsService {
 				@IContextMenuService contextMenuService: IContextMenuService,
 				@IExtensionService extensionService: IExtensionService,
 			) {
-				super(viewContainer.id, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
+				super(viewContainer.id, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
 			}
 
 			protected createViewPaneContainer(element: HTMLElement): ViewPaneContainer {

@@ -228,9 +228,6 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	get crashReporterDirectory(): string | undefined { return this.args['crash-reporter-directory']; }
 
 	@memoize
-	get disableTelemetry(): boolean { return !!this.args['disable-telemetry']; }
-
-	@memoize
 	get disableExperiments(): boolean { return !!this.args['disable-experiments']; }
 
 	@memoize

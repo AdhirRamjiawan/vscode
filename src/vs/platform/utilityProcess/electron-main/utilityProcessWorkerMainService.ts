@@ -9,7 +9,6 @@ import { ILogService } from '../../log/common/log.js';
 import { IUtilityProcessWorkerCreateConfiguration, IOnDidTerminateUtilityrocessWorkerProcess, IUtilityProcessWorkerConfiguration, IUtilityProcessWorkerProcessExit, IUtilityProcessWorkerService } from '../common/utilityProcessWorkerService.js';
 import { IWindowsMainService } from '../../windows/electron-main/windows.js';
 import { WindowUtilityProcess } from './utilityProcess.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { hash } from '../../../base/common/hash.js';
 import { Event, Emitter } from '../../../base/common/event.js';
 import { DeferredPromise } from '../../../base/common/async.js';
@@ -31,7 +30,6 @@ export class UtilityProcessWorkerMainService extends Disposable implements IUtil
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService
 	) {
 		super();
@@ -50,7 +48,7 @@ export class UtilityProcessWorkerMainService extends Disposable implements IUtil
 		}
 
 		// Create new worker
-		const worker = new UtilityProcessWorker(this.logService, this.windowsMainService, this.telemetryService, this.lifecycleMainService, configuration);
+		const worker = new UtilityProcessWorker(this.logService, this.windowsMainService, this.lifecycleMainService, configuration);
 		if (!worker.spawn()) {
 			return { reason: { code: 1, signal: 'EINVALID' } };
 		}
@@ -104,13 +102,12 @@ class UtilityProcessWorker extends Disposable {
 	constructor(
 		@ILogService logService: ILogService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILifecycleMainService lifecycleMainService: ILifecycleMainService,
 		private readonly configuration: IUtilityProcessWorkerCreateConfiguration
 	) {
 		super();
 
-		this.utilityProcess = this._register(new WindowUtilityProcess(logService, windowsMainService, telemetryService, lifecycleMainService));
+		this.utilityProcess = this._register(new WindowUtilityProcess(logService, windowsMainService,, lifecycleMainService));
 
 		this.registerListeners();
 	}

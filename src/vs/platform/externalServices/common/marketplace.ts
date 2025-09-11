@@ -6,7 +6,6 @@
 import { IHeaders } from '../../../base/parts/request/common/request.js';
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { IEnvironmentService } from '../../environment/common/environment.js';
-import { getServiceMachineId } from './serviceMachineId.js';
 import { IFileService } from '../../files/common/files.js';
 import { IProductService } from '../../product/common/productService.js';
 import { IStorageService } from '../../storage/common/storage.js';

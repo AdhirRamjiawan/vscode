@@ -11,7 +11,6 @@ import { CwdDetectionCapability } from '../capabilities/cwdDetectionCapability.j
 import { IBufferMarkCapability, ICommandDetectionCapability, ICwdDetectionCapability, ISerializedCommandDetectionCapability, IShellEnvDetectionCapability, TerminalCapability } from '../capabilities/capabilities.js';
 import { PartialCommandDetectionCapability } from '../capabilities/partialCommandDetectionCapability.js';
 import { ILogService } from '../../../log/common/log.js';
-import { ITelemetryService } from '../../../telemetry/common/telemetry.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { BufferMarkCapability } from '../capabilities/bufferMarkCapability.js';
 import type { ITerminalAddon, Terminal } from '@xterm/headless';
@@ -324,7 +323,6 @@ const enum ITermOscPt {
 export class ShellIntegrationAddon extends Disposable implements IShellIntegration, ITerminalAddon {
 	private _terminal?: Terminal;
 	readonly capabilities = this._register(new TerminalCapabilityStore());
-	private _hasUpdatedTelemetry: boolean = false;
 	private _activationTimeout: Timeout | undefined;
 	private _commonProtocolDisposables: IDisposable[] = [];
 
@@ -341,9 +339,7 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 
 	constructor(
 		private _nonce: string,
-		private readonly _disableTelemetry: boolean | undefined,
 		private _onDidExecuteText: Event<void> | undefined,
-		private readonly _telemetryService: ITelemetryService | undefined,
 		private readonly _logService: ILogService
 	) {
 		super();
@@ -368,7 +364,6 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 		);
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetCwd, data => this._doHandleSetCwd(data)));
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetWindowsFriendlyCwd, data => this._doHandleSetWindowsFriendlyCwd(data)));
-		this._ensureCapabilitiesOrAddFailureTelemetry();
 	}
 
 	getMarkerId(terminal: Terminal, vscodeMarkerId: string) {
@@ -425,29 +420,11 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 
 	private _handleVSCodeSequence(data: string): boolean {
 		const didHandle = this._doHandleVSCodeSequence(data);
-		if (!this._hasUpdatedTelemetry && didHandle) {
-			this._telemetryService?.publicLog2<{}, { owner: 'meganrogge'; comment: 'Indicates shell integration was activated' }>('terminal/shellIntegrationActivationSucceeded');
-			this._hasUpdatedTelemetry = true;
-			this._clearActivationTimeout();
-		}
 		if (this._status !== ShellIntegrationStatus.VSCode) {
 			this._status = ShellIntegrationStatus.VSCode;
 			this._onDidChangeStatus.fire(this._status);
 		}
 		return didHandle;
-	}
-
-	private async _ensureCapabilitiesOrAddFailureTelemetry(): Promise<void> {
-		if (!this._telemetryService || this._disableTelemetry) {
-			return;
-		}
-		this._activationTimeout = setTimeout(() => {
-			if (!this.capabilities.get(TerminalCapability.CommandDetection) && !this.capabilities.get(TerminalCapability.CwdDetection)) {
-				this._telemetryService?.publicLog2<{}, { owner: 'meganrogge'; comment: 'Indicates shell integration activation timeout' }>('terminal/shellIntegrationActivationTimeout');
-				this._logService.warn('Shell integration failed to add capabilities within 10 seconds');
-			}
-			this._hasUpdatedTelemetry = true;
-		}, 10000);
 	}
 
 	private _clearActivationTimeout(): void {

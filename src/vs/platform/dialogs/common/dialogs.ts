@@ -11,7 +11,6 @@ import Severity from '../../../base/common/severity.js';
 import { URI } from '../../../base/common/uri.js';
 import { localize } from '../../../nls.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
-import { ITelemetryData } from '../../telemetry/common/telemetry.js';
 import { MessageBoxOptions } from '../../../base/parts/sandbox/common/electronTypes.js';
 import { mnemonicButtonLabel } from '../../../base/common/labels.js';
 import { isLinux, isMacintosh, isWindows } from '../../../base/common/platform.js';
@@ -185,7 +184,6 @@ export interface ICheckboxResult {
 export interface IPickAndOpenOptions {
 	readonly forceNewWindow?: boolean;
 	defaultUri?: URI;
-	readonly telemetryExtraData?: ITelemetryData;
 	availableFileSystems?: string[];
 	remoteAuthority?: string | null;
 }
@@ -614,8 +612,6 @@ export interface INativeOpenDialogOptions {
 
 	readonly defaultPath?: string;
 
-	readonly telemetryEventName?: string;
-	readonly telemetryExtraData?: ITelemetryData;
 }
 
 export interface IMassagedMessageBoxOptions {

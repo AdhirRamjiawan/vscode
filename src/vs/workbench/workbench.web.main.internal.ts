@@ -81,16 +81,7 @@ import { ExtensionTipsService } from '../platform/extensionManagement/common/ext
 import { IWorkbenchExtensionManagementService } from './services/extensionManagement/common/extensionManagement.js';
 import { ExtensionManagementService } from './services/extensionManagement/common/extensionManagementService.js';
 import { LogLevel } from '../platform/log/common/log.js';
-import { UserDataSyncMachinesService, IUserDataSyncMachinesService } from '../platform/userDataSync/common/userDataSyncMachines.js';
-import { IUserDataSyncStoreService, IUserDataSyncService, IUserDataAutoSyncService, IUserDataSyncLocalStoreService, IUserDataSyncResourceProviderService } from '../platform/userDataSync/common/userDataSync.js';
-import { UserDataSyncStoreService } from '../platform/userDataSync/common/userDataSyncStoreService.js';
-import { UserDataSyncLocalStoreService } from '../platform/userDataSync/common/userDataSyncLocalStoreService.js';
-import { UserDataSyncService } from '../platform/userDataSync/common/userDataSyncService.js';
-import { IUserDataSyncAccountService, UserDataSyncAccountService } from '../platform/userDataSync/common/userDataSyncAccount.js';
-import { UserDataAutoSyncService } from '../platform/userDataSync/common/userDataAutoSyncService.js';
 import { AccessibilityService } from '../platform/accessibility/browser/accessibilityService.js';
-import { ICustomEndpointTelemetryService } from '../platform/telemetry/common/telemetry.js';
-import { NullEndpointTelemetryService } from '../platform/telemetry/common/telemetryUtils.js';
 import { ITitleService } from './services/title/browser/titleService.js';
 import { BrowserTitleService } from './browser/parts/titlebar/titlebarPart.js';
 import { ITimerService, TimerService } from './services/timer/browser/timerService.js';
@@ -103,17 +94,9 @@ import { IDefaultAccountService, NullDefaultAccountService } from './services/ac
 registerSingleton(IWorkbenchExtensionManagementService, ExtensionManagementService, InstantiationType.Delayed);
 registerSingleton(IAccessibilityService, AccessibilityService, InstantiationType.Delayed);
 registerSingleton(IContextMenuService, ContextMenuService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncStoreService, UserDataSyncStoreService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncMachinesService, UserDataSyncMachinesService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncLocalStoreService, UserDataSyncLocalStoreService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncAccountService, UserDataSyncAccountService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncService, UserDataSyncService, InstantiationType.Delayed);
-registerSingleton(IUserDataSyncResourceProviderService, UserDataSyncResourceProviderService, InstantiationType.Delayed);
-registerSingleton(IUserDataAutoSyncService, UserDataAutoSyncService, InstantiationType.Eager /* Eager to start auto sync */);
 registerSingleton(ITitleService, BrowserTitleService, InstantiationType.Eager);
 registerSingleton(IExtensionTipsService, ExtensionTipsService, InstantiationType.Delayed);
 registerSingleton(ITimerService, TimerService, InstantiationType.Delayed);
-registerSingleton(ICustomEndpointTelemetryService, NullEndpointTelemetryService, InstantiationType.Delayed);
 registerSingleton(IDiagnosticsService, NullDiagnosticsService, InstantiationType.Delayed);
 registerSingleton(ILanguagePackService, WebLanguagePacksService, InstantiationType.Delayed);
 registerSingleton(IWebContentExtractorService, NullWebContentExtractorService, InstantiationType.Delayed);
@@ -191,7 +174,6 @@ import { URI } from '../base/common/uri.js';
 import { Event, Emitter } from '../base/common/event.js';
 import { Disposable } from '../base/common/lifecycle.js';
 import { GroupOrientation } from './services/editor/common/editorGroupsService.js';
-import { UserDataSyncResourceProviderService } from '../platform/userDataSync/common/userDataSyncResourceProvider.js';
 import { RemoteAuthorityResolverError, RemoteAuthorityResolverErrorCode } from '../platform/remote/common/remoteAuthorityResolver.js';
 
 // TODO@esm remove me once we stop supporting our web-esm-bridge

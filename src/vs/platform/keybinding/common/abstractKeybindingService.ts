@@ -21,7 +21,6 @@ import { ResolutionResult, KeybindingResolver, ResultKind, NoMatchingKb } from '
 import { ResolvedKeybindingItem } from './resolvedKeybindingItem.js';
 import { ILogService } from '../../log/common/log.js';
 import { INotificationService, IStatusHandle } from '../../notification/common/notification.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 
 interface CurrentChord {
 	keypress: string;
@@ -374,9 +373,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 						this._currentlyDispatchingCommandId = null;
 					}
 
-					if (!HIGH_FREQ_COMMANDS.test(resolveResult.commandId)) {
-						this._telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: resolveResult.commandId, from: 'keybinding', detail: userKeypress.getUserSettingsLabel() ?? undefined });
-					}
 				}
 
 				return shouldPreventDefault;

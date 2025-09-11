@@ -13,7 +13,6 @@ import { fuzzyContains, getNLines } from '../../../../base/common/strings.js';
 import { URI, UriComponents } from '../../../../base/common/uri.js';
 import { IFilesConfiguration } from '../../../../platform/files/common/files.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
-import { ITelemetryData } from '../../../../platform/telemetry/common/telemetry.js';
 import { Event } from '../../../../base/common/event.js';
 import * as paths from '../../../../base/common/path.js';
 import { isCancellationError } from '../../../../base/common/errors.js';
@@ -89,7 +88,6 @@ export interface IFolderQuery<U extends UriComponents = URI> {
 }
 
 export interface ICommonQueryProps<U extends UriComponents> {
-	/** For telemetry - indicates what is triggering the source */
 	_reason?: string;
 
 	folderQueries: IFolderQuery<U>[];
@@ -567,10 +565,6 @@ export function deserializeSearchError(error: Error): SearchError {
 export function serializeSearchError(searchError: SearchError): Error {
 	const details = { message: searchError.message, code: searchError.code };
 	return new Error(JSON.stringify(details));
-}
-export interface ITelemetryEvent {
-	eventName: string;
-	data: ITelemetryData;
 }
 
 export interface IRawSearchService {

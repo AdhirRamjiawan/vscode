@@ -19,7 +19,6 @@ import { IFileService } from '../../files/common/files.js';
 import { ILogService, LogLevel } from '../../log/common/log.js';
 import { IS_NEW_KEY } from '../common/storage.js';
 import { IUserDataProfile, IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
-import { currentSessionDateStorageKey, firstSessionDateStorageKey, lastSessionDateStorageKey } from '../../telemetry/common/telemetry.js';
 import { isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier, IAnyWorkspaceIdentifier } from '../../workspace/common/workspace.js';
 import { Schemas } from '../../../base/common/network.js';
 
@@ -334,26 +333,8 @@ export class ApplicationStorageMain extends BaseProfileAwareStorageMain {
 	protected override async doInit(storage: IStorage): Promise<void> {
 		await super.doInit(storage);
 
-		// Apply telemetry values as part of the application storage initialization
-		this.updateTelemetryState(storage);
 	}
 
-	private updateTelemetryState(storage: IStorage): void {
-
-		// First session date (once)
-		const firstSessionDate = storage.get(firstSessionDateStorageKey, undefined);
-		if (firstSessionDate === undefined) {
-			storage.set(firstSessionDateStorageKey, new Date().toUTCString());
-		}
-
-		// Last / current session (always)
-		// previous session date was the "current" one at that time
-		// current session date is "now"
-		const lastSessionDate = storage.get(currentSessionDateStorageKey, undefined);
-		const currentSessionDate = new Date().toUTCString();
-		storage.set(lastSessionDateStorageKey, typeof lastSessionDate === 'undefined' ? null : lastSessionDate);
-		storage.set(currentSessionDateStorageKey, currentSessionDate);
-	}
 }
 
 export class WorkspaceStorageMain extends BaseStorageMain {

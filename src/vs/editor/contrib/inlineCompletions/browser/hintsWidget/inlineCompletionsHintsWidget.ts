@@ -243,8 +243,7 @@ export class InlineSuggestionHintsContentWidget extends Disposable implements IC
 					return a;
 				}
 				return undefined;
-			},
-			telemetrySource: 'InlineSuggestionToolbar',
+			}
 		}));
 
 		this.toolBar.setPrependedPrimaryActions([

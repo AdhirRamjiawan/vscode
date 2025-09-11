@@ -15,7 +15,6 @@ import { IUserDataProfilesService } from '../../userDataProfile/common/userDataP
 import { IPolicyService } from '../../policy/common/policy.js';
 import { ILoggerMainService } from '../../log/electron-main/loggerService.js';
 import { UtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
-import { NullTelemetryService } from '../../telemetry/common/telemetryUtils.js';
 import { parseSharedProcessDebugPort } from '../../environment/node/environmentService.js';
 import { assertReturnsDefined } from '../../../base/common/types.js';
 import { SharedProcessChannelConnection, SharedProcessRawConnection, SharedProcessLifecycle } from '../common/sharedProcess.js';
@@ -145,7 +144,7 @@ export class SharedProcess extends Disposable {
 	}
 
 	private createUtilityProcess(): void {
-		this.utilityProcess = this._register(new UtilityProcess(this.logService, NullTelemetryService, this.lifecycleMainService));
+		this.utilityProcess = this._register(new UtilityProcess(this.logService, this.lifecycleMainService));
 
 		// Install a log listener for very early shared process warnings and errors
 		this.utilityProcessLogListener = this.utilityProcess.onMessage((e: any) => {

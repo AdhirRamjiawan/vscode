@@ -11,7 +11,6 @@ import { AuthenticationWWWAuthenticateRequest, ExtHostAuthenticationShape, ExtHo
 import { IDialogService, IPromptButton } from '../../../platform/dialogs/common/dialogs.js';
 import Severity from '../../../base/common/severity.js';
 import { INotificationService } from '../../../platform/notification/common/notification.js';
-import { ITelemetryService } from '../../../platform/telemetry/common/telemetry.js';
 import { Emitter, Event } from '../../../base/common/event.js';
 import { IAuthenticationAccessService } from '../../services/authentication/browser/authenticationAccessService.js';
 import { IAuthenticationUsageService } from '../../services/authentication/browser/authenticationUsageService.js';
@@ -116,7 +115,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		@IAuthenticationUsageService private readonly authenticationUsageService: IAuthenticationUsageService,
 		@IDialogService private readonly dialogService: IDialogService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@ILogService private readonly logService: ILogService,
 		@IURLService private readonly urlService: IURLService,
@@ -169,16 +167,7 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 	}
 
 	async $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean, supportedAuthorizationServer: UriComponents[] = [], supportsChallenges?: boolean): Promise<void> {
-		if (!this.authenticationService.declaredProviders.find(p => p.id === id)) {
-			// If telemetry shows that this is not happening much, we can instead throw an error here.
-			this.logService.warn(`Authentication provider ${id} was not declared in the Extension Manifest.`);
-			type AuthProviderNotDeclaredClassification = {
-				owner: 'TylerLeonhardt';
-				comment: 'An authentication provider was not declared in the Extension Manifest.';
-				id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The provider id.' };
-			};
-			this.telemetryService.publicLog2<{ id: string }, AuthProviderNotDeclaredClassification>('authentication.providerNotDeclared', { id });
-		}
+
 		const emitter = new Emitter<AuthenticationSessionsChangeEvent>();
 		this._registrations.set(id, emitter);
 		const supportedAuthorizationServerUris = supportedAuthorizationServer.map(i => URI.revive(i));
@@ -453,17 +442,8 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 	}
 
 	async $getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWWWAuthenticateRequest, extensionId: string, extensionName: string, options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
-		const scopes = isAuthenticationWWWAuthenticateRequest(scopeListOrRequest) ? scopeListOrRequest.scopes : scopeListOrRequest;
-		if (scopes) {
-			this.sendClientIdUsageTelemetry(extensionId, providerId, scopes);
-		}
 		const session = await this.doGetSession(providerId, scopeListOrRequest, extensionId, extensionName, options);
 
-		if (session) {
-			this.sendProviderUsageTelemetry(extensionId, providerId);
-			const scopes = isAuthenticationWWWAuthenticateRequest(scopeListOrRequest) ? scopeListOrRequest.scopes : scopeListOrRequest;
-			this.authenticationUsageService.addAccountUsage(providerId, session.account.label, scopes, extensionId, extensionName);
-		}
 
 		return session;
 	}
@@ -473,42 +453,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		return accounts;
 	}
 
-	// TODO@TylerLeonhardt this is a temporary addition to telemetry to understand what extensions are overriding the client id.
-	// We can use this telemetry to reach out to these extension authors and let them know that they many need configuration changes
-	// due to the adoption of the Microsoft broker.
-	// Remove this in a few iterations.
-	private _sentClientIdUsageEvents = new Set<string>();
-	private sendClientIdUsageTelemetry(extensionId: string, providerId: string, scopes: readonly string[]): void {
-		const containsVSCodeClientIdScope = scopes.some(scope => scope.startsWith('VSCODE_CLIENT_ID:'));
-		const key = `${extensionId}|${providerId}|${containsVSCodeClientIdScope}`;
-		if (this._sentClientIdUsageEvents.has(key)) {
-			return;
-		}
-		this._sentClientIdUsageEvents.add(key);
-		if (containsVSCodeClientIdScope) {
-			type ClientIdUsageClassification = {
-				owner: 'TylerLeonhardt';
-				comment: 'Used to see which extensions are using the VSCode client id override';
-				extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension id.' };
-			};
-			this.telemetryService.publicLog2<{ extensionId: string }, ClientIdUsageClassification>('authentication.clientIdUsage', { extensionId });
-		}
-	}
-
-	private sendProviderUsageTelemetry(extensionId: string, providerId: string): void {
-		const key = `${extensionId}|${providerId}`;
-		if (this._sentProviderUsageEvents.has(key)) {
-			return;
-		}
-		this._sentProviderUsageEvents.add(key);
-		type AuthProviderUsageClassification = {
-			owner: 'TylerLeonhardt';
-			comment: 'Used to see which extensions are using which providers';
-			extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension id.' };
-			providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The provider id.' };
-		};
-		this.telemetryService.publicLog2<{ extensionId: string; providerId: string }, AuthProviderUsageClassification>('authentication.providerUsage', { providerId, extensionId });
-	}
 
 	//#region Account Preferences
 	// TODO@TylerLeonhardt: Update this after a few iterations to no longer fallback to the session preference

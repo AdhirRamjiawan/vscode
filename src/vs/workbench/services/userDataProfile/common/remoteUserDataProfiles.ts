@@ -15,7 +15,6 @@ import { IUserDataProfileService } from './userDataProfile.js';
 import { distinct } from '../../../../base/common/arrays.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
 import { UserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfileIpc.js';
-import { ErrorNoTelemetry } from '../../../../base/common/errors.js';
 
 const associatedRemoteProfilesKey = 'associatedRemoteProfiles';
 
@@ -82,7 +81,7 @@ class RemoteUserDataProfilesService extends Disposable implements IRemoteUserDat
 		await this.initPromise;
 
 		if (!this.remoteUserDataProfilesService) {
-			throw new ErrorNoTelemetry('Remote profiles service not available in the current window');
+			throw 'Remote profiles service not available in the current window';
 		}
 
 		return this.remoteUserDataProfilesService.profiles;
@@ -92,7 +91,7 @@ class RemoteUserDataProfilesService extends Disposable implements IRemoteUserDat
 		await this.initPromise;
 
 		if (!this.remoteUserDataProfilesService) {
-			throw new ErrorNoTelemetry('Remote profiles service not available in the current window');
+			throw 'Remote profiles service not available in the current window';
 		}
 
 		return this.getAssociatedRemoteProfile(localProfile, this.remoteUserDataProfilesService);

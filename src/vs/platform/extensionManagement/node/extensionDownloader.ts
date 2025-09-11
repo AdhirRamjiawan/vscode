@@ -22,7 +22,6 @@ import { IExtensionSignatureVerificationService } from './extensionSignatureVeri
 import { TargetPlatform } from '../../extensions/common/extensions.js';
 import { FileOperationResult, IFileService, IFileStatWithMetadata, toFileOperationResult } from '../../files/common/files.js';
 import { ILogService } from '../../log/common/log.js';
-import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
 
 type RetryDownloadClassification = {
@@ -50,7 +49,6 @@ export class ExtensionsDownloader extends Disposable {
 		@IFileService private readonly fileService: IFileService,
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
 		@IExtensionSignatureVerificationService private readonly extensionSignatureVerificationService: IExtensionSignatureVerificationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@ILogService private readonly logService: ILogService,
 	) {
@@ -125,12 +123,6 @@ export class ExtensionsDownloader extends Disposable {
 				}
 			}, 2);
 
-			if (attempts > 1) {
-				this.telemetryService.publicLog2<RetryDownloadEvent, RetryDownloadClassification>('extensiongallery:downloadvsix:retry', {
-					extensionId: extension.identifier.id,
-					attempts
-				});
-			}
 
 			return location;
 		} catch (e) {
@@ -155,12 +147,6 @@ export class ExtensionsDownloader extends Disposable {
 				}
 			}, 2);
 
-			if (attempts > 1) {
-				this.telemetryService.publicLog2<RetryDownloadEvent, RetryDownloadClassification>('extensiongallery:downloadsigzip:retry', {
-					extensionId: extension.identifier.id,
-					attempts
-				});
-			}
 
 			return location;
 		} catch (e) {

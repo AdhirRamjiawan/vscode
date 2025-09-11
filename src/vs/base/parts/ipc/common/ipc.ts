@@ -8,7 +8,7 @@ import { CancelablePromise, createCancelablePromise, timeout } from '../../../co
 import { VSBuffer } from '../../../common/buffer.js';
 import { CancellationToken, CancellationTokenSource } from '../../../common/cancellation.js';
 import { memoize } from '../../../common/decorators.js';
-import { CancellationError, ErrorNoTelemetry } from '../../../common/errors.js';
+import { CancellationError } from '../../../common/errors.js';
 import { Emitter, Event, EventMultiplexer, Relay } from '../../../common/event.js';
 import { createSingleCallFunction } from '../../../common/functional.js';
 import { DisposableStore, dispose, IDisposable, toDisposable } from '../../../common/lifecycle.js';
@@ -1141,7 +1141,7 @@ export namespace ProxyChannel {
 					}
 				}
 
-				throw new ErrorNoTelemetry(`Event not found: ${event}`);
+				throw `Event not found: ${event}`;
 			}
 
 			call(_: unknown, command: string, args?: any[]): Promise<any> {
@@ -1162,7 +1162,7 @@ export namespace ProxyChannel {
 					return res;
 				}
 
-				throw new ErrorNoTelemetry(`Method not found: ${command}`);
+				throw `Method not found: ${command}`;
 			}
 		};
 	}
@@ -1228,7 +1228,7 @@ export namespace ProxyChannel {
 					};
 				}
 
-				throw new ErrorNoTelemetry(`Property not found: ${String(propKey)}`);
+				throw `Property not found: ${String(propKey)}`;
 			}
 		}) as T;
 	}
